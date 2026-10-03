@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: photonv-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: photonv
+      POSTGRES_USER: photonv
+      # 生产环境务必修改
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-photonv-change-me}
+    volumes:
+      - photonv-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U photonv -d photonv']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  photonv:
+    build:
+      context: .
+      args:
+        # 国内服务器打开这两个参数可以大幅加速构建
+        APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
+        PIP_INDEX: ${PIP_INDEX:-https://pypi.org/simple}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+    image: photonv:latest
+    container_name: photonv
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '8080:8080'
+    environment:
+      APP_ENV: production
+      PORT: 8080
+      HOST: 0.0.0.0
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      DATABASE_URL: postgresql+psycopg://photonv:${POSTGRES_PASSWORD:-photonv-change-me}@db:5432/photonv
+      # CHANGE THIS: openssl rand -hex 48
+      SECRET_KEY: ${SECRET_KEY:-please-change-this-to-a-long-random-string}
+      MAX_VIDEO_MB: ${MAX_VIDEO_MB:-2048}
+      MAX_IMAGE_MB: ${MAX_IMAGE_MB:-16}
+      ROOT_USERNAME: ${ROOT_USERNAME:-root}
+      ROOT_PASSWORD: ${ROOT_PASSWORD:-photonv123456}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/api/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  photonv-db:
