@@ -58,7 +58,12 @@ SETTINGS: list[dict] = [
     _f("copyright", "版权信息", "string", "© 2026 X4CE", "appearance", public=True),
     # ------------------------------------------------------------ 注册登录
     _f("allow_register", "开放注册", "boolean", True, "account", public=True),
-    _f("register_need_email", "注册必须填邮箱", "boolean", False, "account", public=True),
+    _f("register_require", "注册必填项", "select", "none", "account", public=True,
+       options=[{"value": "none", "label": "都不需要（可选填）"},
+                {"value": "email", "label": "必须填邮箱"},
+                {"value": "phone", "label": "必须填手机号"},
+                {"value": "both", "label": "邮箱和手机号都必须填"}],
+       description="没要求填写的那一项，用户可以之后在「个人设置」里自行绑定"),
     _f("register_email_suffix", "允许的邮箱后缀（JSON 数组，留空不限）", "json", [], "account"),
     _f("register_need_invite", "注册需要邀请码", "boolean", False, "account"),
     _f("invite_code", "注册邀请码", "string", "", "account"),
@@ -298,7 +303,8 @@ _EXTRA: list[dict] = [
     _f("sms_dev_expose_code", "开发模式下把验证码返回给前端", "boolean", False, "sms",
        description="仅本地调试时打开；生产环境请保持关闭，验证码只会写进日志与站内信"),
     _f("phone_login_enabled", "允许手机号 + 验证码登录", "boolean", True, "sms", public=True),
-    _f("phone_required_register", "注册必须填写手机号", "boolean", False, "sms", public=True),
+    _f("phone_register_verify", "注册时手机号需要验证码", "boolean", True, "sms", public=True,
+       description="注册必填项里选了手机号时会用到；关闭则只记录号码不校验"),
     _f("phone_required_bind", "必须绑定手机号才能投稿 / 评论", "boolean", False, "sms", public=True),
     _f("phone_mask", "前台隐藏手机号中间四位", "boolean", True, "sms", public=True),
     # --------------------------------------------------------------- 支付

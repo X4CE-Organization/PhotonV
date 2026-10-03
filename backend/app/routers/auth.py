@@ -49,6 +49,22 @@ def username_taken(db: Session, username: str) -> bool:
     return bool(db.scalar(select(models.User.id).where(models.User.username == username)))
 
 
+def register_requirement() -> str:
+    """注册必填项：none | email | phone | both（兼容旧的 register_need_email / phone_required_register）。"""
+    mode = (site.get_str("register_require", "") or "").strip()
+    if mode in {"none", "email", "phone", "both"}:
+        return mode
+    email = site.get_bool("register_need_email", False)
+    phone = site.get_bool("phone_required_register", False)
+    if email and phone:
+        return "both"
+    if email:
+        return "email"
+    if phone:
+        return "phone"
+    return "none"
+
+
 def set_cookie(response: Response, token: str, days: int) -> None:
     response.set_cookie(
         COOKIE_NAME,
@@ -74,7 +90,10 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
     validate_password(password)
     if password2 and password2 != password:
         raise fail(400, "两次输入的密码不一致")
-    if site.get_bool("register_need_email", False) and not email:
+    requirement = register_requirement()
+    email_required = requirement in {"email", "both"}
+    phone_required = requirement in {"phone", "both"}
+    if email_required and not email:
         raise fail(400, "请填写邮箱")
 
     if site.get_bool("register_need_invite", False):
@@ -105,7 +124,6 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
 
     # 手机号（可选 / 由设置决定是否必填）
     phone = sms.normalize(str(payload.get("phone") or ""))
-    phone_required = site.get_bool("phone_required_register", False)
     if phone_required and not phone:
         raise fail(400, "请填写手机号")
     if phone:
@@ -114,10 +132,14 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
         if sms.by_phone(db, phone):
             raise fail(409, "该手机号已被注册")
         code = str(payload.get("phone_code") or "").strip()
-        if not code:
-            raise fail(400, "请填写手机验证码")
-        if not sms.consume(db, phone, "register", code):
-            raise fail(400, "手机验证码不正确或已过期")
+        # 只有开启「注册时手机号需要验证码」才强制校验；关闭则只记录号码
+        if site.get_bool("phone_register_verify", True):
+            if not code:
+                raise fail(400, "请填写手机验证码")
+            if not sms.consume(db, phone, "register", code):
+                raise fail(400, "手机验证码不正确或已过期")
+        elif code:
+            sms.consume(db, phone, "register", code)
 
     if username_taken(db, username):
         raise fail(409, "该用户名已被注册")

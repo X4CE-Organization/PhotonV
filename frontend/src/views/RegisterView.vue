@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { api } from '../api';
 import { toast } from '../composables/toast';
@@ -14,6 +14,14 @@ const error = ref('');
 const cooldown = ref(0);
 const providers = ref<any[]>([]);
 const phoneCooldown = ref(0);
+
+// 注册必填项：none | email | phone | both（由后台「注册与登录」设置决定）
+const requirement = computed(() => String(store.settings.register_require ?? 'none'));
+const emailRequired = computed(
+  () => requirement.value === 'email' || requirement.value === 'both' || !!store.settings.mail_register_verify,
+);
+const phoneRequired = computed(() => requirement.value === 'phone' || requirement.value === 'both');
+const phoneNeedVerify = computed(() => store.settings.phone_register_verify !== false);
 
 async function sendPhoneCode() {
   error.value = '';
@@ -97,7 +105,7 @@ onMounted(async () => {
         <input v-model="form.username" class="input" placeholder="3-20 个字符" />
       </div>
       <div>
-        <label class="label">邮箱 {{ store.settings.register_need_email || store.settings.mail_register_verify ? '' : '（可选）' }}</label>
+        <label class="label">邮箱 {{ emailRequired ? '' : '（可选）' }}</label>
         <input v-model="form.email" class="input" placeholder="you@example.com" />
       </div>
       <div v-if="store.settings.mail_register_verify">
@@ -110,11 +118,11 @@ onMounted(async () => {
         </div>
       </div>
       <div>
-        <label class="label">手机号 {{ store.settings.phone_required_register ? '' : '（可选）' }}</label>
+        <label class="label">手机号 {{ phoneRequired ? '' : '（可选）' }}</label>
         <input v-model="form.phone" class="input" placeholder="11 位手机号" />
       </div>
-      <div v-if="form.phone.trim()">
-        <label class="label">手机验证码</label>
+      <div v-if="phoneRequired || form.phone.trim()">
+        <label class="label">手机验证码 {{ phoneNeedVerify ? '' : '（选填）' }}</label>
         <div class="flex gap-2">
           <input v-model="form.phone_code" class="input flex-1" placeholder="6 位数字" />
           <button type="button" class="btn-ghost shrink-0 text-xs" :disabled="phoneCooldown > 0" @click="sendPhoneCode">
