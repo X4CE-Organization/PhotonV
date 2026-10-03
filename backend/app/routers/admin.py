@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
-from .. import models, realtime, redis_client as redis, settings_store as site, transcode
+from .. import live_stream, models, realtime, redis_client as redis, settings_store as site, transcode
 from ..database import backup_database, delete_backup, get_db, list_backups
 from ..security import hash_password, require_admin, require_superadmin
 from ..settings_registry import SETTING_GROUPS, SETTINGS
@@ -970,6 +970,7 @@ def infra_status(admin: models.User = Depends(require_admin), db: Session = Depe
             "skipped": _count(db, models.Video, models.Video.transcode_status == "skipped"),
         },
         "realtime": realtime.stats(),
+        "live": live_stream.status(),
         "variants": _count(db, models.VideoVariant),
     }
 

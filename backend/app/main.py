@@ -13,7 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import redis_client as redis
 from . import settings_store as site
-from . import realtime, transcode
+from . import live_stream, realtime, transcode
 from .config import settings
 from .database import SessionLocal, init_db
 from .routers import (
@@ -42,7 +42,7 @@ from .routers import (
     ws,
 )
 
-app = FastAPI(title="PhotonV API", version="1.3.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="PhotonV API", version="1.4.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 app.add_middleware(
     CORSMiddleware,
@@ -120,7 +120,7 @@ async def validation_error(_request: Request, exc: RequestValidationError):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.3.0"}
+    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.4.0"}
 
 
 for module in (
@@ -184,6 +184,7 @@ def on_startup() -> None:
     redis.init()
     redis.subscribe_worker(realtime.deliver_local)
     transcode.start_worker()
+    live_stream.start_worker()
 
 
 def run() -> None:

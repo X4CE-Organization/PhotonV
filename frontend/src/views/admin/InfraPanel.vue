@@ -96,6 +96,18 @@ onUnmounted(() => window.clearInterval(timer));
       <section class="surface p-4">
         <h2 class="flex items-center gap-2 text-sm font-semibold"><Icon name="film" :size="16" />ffmpeg 转码</h2>
         <dl class="mt-3 space-y-2 text-sm">
+          <div class="flex justify-between"><dt class="muted">直播接入（MediaMTX）</dt>
+            <dd :class="data?.live?.reachable ? 'text-emerald-500' : data?.live?.enabled ? 'text-amber-500' : 'muted'">
+              {{ data?.live?.reachable ? `正常 · ${data?.live?.publishing ?? 0} 路推流中` : (data?.live?.enabled ? '连不上' : '未启用') }}
+            </dd>
+          </div>
+          <div v-if="data?.live?.enabled" class="flex justify-between"><dt class="muted">RTMP 推流地址</dt>
+            <dd class="font-mono text-xs">{{ data.live.rtmpServer || '—' }}</dd>
+          </div>
+          <div v-if="data?.live?.enabled" class="flex justify-between"><dt class="muted">WHIP 推流地址</dt>
+            <dd class="font-mono text-xs">{{ data.live.whipBase || '—' }}</dd>
+          </div>
+          <div v-if="data?.live?.message" class="text-xs muted">{{ data.live.message }}</div>
           <div class="flex justify-between"><dt class="muted">可用</dt>
             <dd :class="data?.ffmpeg?.available ? 'text-emerald-500' : 'text-amber-500'">{{ data?.ffmpeg?.available ? '是' : '否' }}</dd>
           </div>

@@ -1,4 +1,24 @@
 services:
+  # ---------------------------------------------------------------------------
+  # 直播接入：MediaMTX 同时负责接收推流（RTMP / 浏览器 WHIP）与分发播放（WHEP / HLS）
+  # 不需要直播可以把这一整段删掉，并在后台把「启用内置推流接入」关掉。
+  # 公网部署前记得改 docs/mediamtx.yml 里的 webrtcAdditionalHosts。
+  # ---------------------------------------------------------------------------
+  mediamtx:
+    image: bluenviron/mediamtx:1.11.3
+    container_name: photonv-live
+    restart: unless-stopped
+    volumes:
+      - ./docs/mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - '1935:1935'        # RTMP 推流（OBS）
+      - '8888:8888'        # HLS 播放
+      - '8889:8889'        # WebRTC：WHIP 推流 + WHEP 播放
+      - '8189:8189/udp'    # WebRTC 媒体端口
+      - '8554:8554'        # RTSP（可选）
+    depends_on:
+      - photonv
+
   redis:
     image: redis:7-alpine
     container_name: photonv-redis
@@ -58,6 +78,13 @@ services:
       TRANSCODE_CONCURRENCY: ${TRANSCODE_CONCURRENCY:-1}
       # CHANGE THIS: openssl rand -hex 48
       SECRET_KEY: ${SECRET_KEY:-please-change-this-to-a-long-random-string}
+      # 直播：容器内用服务名访问 MediaMTX，改完重启 photonv 生效
+      LIVE_API_URL: ${LIVE_API_URL:-http://mediamtx:9997}
+      # 下面几个是给浏览器 / OBS 用的公网地址，按你的域名改
+      LIVE_RTMP_SERVER: ${LIVE_RTMP_SERVER:-rtmp://localhost:1935}
+      LIVE_WHIP_BASE: ${LIVE_WHIP_BASE:-http://localhost:8889}
+      LIVE_WHEP_BASE: ${LIVE_WHEP_BASE:-http://localhost:8889}
+      LIVE_HLS_BASE: ${LIVE_HLS_BASE:-http://localhost:8888}
       MAX_VIDEO_MB: ${MAX_VIDEO_MB:-2048}
       MAX_IMAGE_MB: ${MAX_IMAGE_MB:-16}
       ROOT_USERNAME: ${ROOT_USERNAME:-root}

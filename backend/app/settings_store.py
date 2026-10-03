@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any, Optional
 
 from sqlalchemy import select
@@ -11,6 +12,16 @@ from . import models
 from .settings_registry import SETTING_MAP, SETTINGS, PUBLIC_KEYS
 
 _cache: dict[str, Any] = {}
+
+# 这些项允许用环境变量给「默认值」——只在数据库里没有对应记录时生效，
+# 后台手动改过之后以数据库为准。方便 Docker 部署时直接指定内部服务地址。
+ENV_OVERRIDES: dict[str, str] = {
+    "live_api_url": "LIVE_API_URL",
+    "live_rtmp_server": "LIVE_RTMP_SERVER",
+    "live_whip_base": "LIVE_WHIP_BASE",
+    "live_whep_base": "LIVE_WHEP_BASE",
+    "live_hls_base": "LIVE_HLS_BASE",
+}
 
 
 def _serialize(value: Any, type_: str) -> str:
@@ -48,10 +59,15 @@ def warm(db: Session) -> None:
         key = field["key"]
         if key in rows:
             _cache[key] = _parse(rows[key], field)
-        elif field["type"] == "password":
-            _cache[key] = ""
         else:
-            _cache[key] = field["default"]
+            env_name = ENV_OVERRIDES.get(key)
+            env_value = os.getenv(env_name, "").strip() if env_name else ""
+            if env_value:
+                _cache[key] = _parse(env_value, field)
+            elif field["type"] == "password":
+                _cache[key] = ""
+            else:
+                _cache[key] = field["default"]
 
 
 def get(key: str, default: Any = None) -> Any:

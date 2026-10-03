@@ -567,6 +567,8 @@ class LiveRoom(Base):
     )
     stream_key: Mapped[str] = mapped_column(String(64), default="")
     play_url: Mapped[str] = mapped_column(String(500), default="")
+    # 推流来源：rtmp（OBS 等） / whip（浏览器开播） / ''（未推流）
+    stream_source: Mapped[str] = mapped_column(String(16), default="")
     status: Mapped[str] = mapped_column(String(16), default="offline")
     viewer_count: Mapped[int] = mapped_column(Integer, default=0)
     total_viewers: Mapped[int] = mapped_column(Integer, default=0)

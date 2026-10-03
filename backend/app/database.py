@@ -54,12 +54,14 @@ COLUMN_MIGRATIONS: list[tuple[str, str]] = [
     ("videos", "scheduled_at TIMESTAMP"),
     ("orders", "trade_no VARCHAR(64) NOT NULL DEFAULT ''"),
     ("orders", "pay_payload TEXT NOT NULL DEFAULT ''"),
+    ("live_rooms", "stream_source VARCHAR(16) NOT NULL DEFAULT ''"),
 ]
 
 # 索引迁移（幂等）
 INDEX_MIGRATIONS: list[str] = [
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL",
     "CREATE INDEX IF NOT EXISTS idx_sms_codes_phone ON sms_codes(phone, purpose, used)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_live_rooms_stream_key ON live_rooms(stream_key) WHERE stream_key <> ''",
 ]
 
 
