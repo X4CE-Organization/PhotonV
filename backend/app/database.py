@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
@@ -33,6 +33,32 @@ def init_db() -> None:
     from . import models  # noqa: F401  确保模型已注册
 
     Base.metadata.create_all(bind=engine)
+    ensure_columns()
+
+
+# 老库补列：新增字段时加到这里，已存在会报错并跳过，不影响启动。
+COLUMN_MIGRATIONS: list[tuple[str, str]] = [
+    ("users", "membership_level INTEGER NOT NULL DEFAULT 0"),
+    ("users", "membership_expires TIMESTAMP"),
+    ("users", "total_earned INTEGER NOT NULL DEFAULT 0"),
+    ("users", "can_live BOOLEAN NOT NULL DEFAULT false"),
+    ("users", "stream_key VARCHAR(64) NOT NULL DEFAULT ''"),
+    ("users", "email_verified BOOLEAN NOT NULL DEFAULT false"),
+    ("users", "mail_optout BOOLEAN NOT NULL DEFAULT false"),
+    ("users", "last_bonus_date VARCHAR(16) NOT NULL DEFAULT ''"),
+    ("videos", "transcode_status VARCHAR(16) NOT NULL DEFAULT 'pending'"),
+    ("videos", "transcode_error VARCHAR(500) NOT NULL DEFAULT ''"),
+    ("videos", "hls_path VARCHAR(500) NOT NULL DEFAULT ''"),
+]
+
+
+def ensure_columns() -> None:
+    for table, definition in COLUMN_MIGRATIONS:
+        try:
+            with engine.begin() as connection:
+                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {definition}"))
+        except Exception:  # noqa: BLE001 - 列已存在
+            continue
 
 
 def _pg_url() -> str:

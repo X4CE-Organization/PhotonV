@@ -11,7 +11,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from . import redis_client as redis
 from . import settings_store as site
+from . import realtime, transcode
 from .config import settings
 from .database import SessionLocal, init_db
 from .routers import (
@@ -20,12 +22,18 @@ from .routers import (
     comments,
     danmaku,
     interactions,
+    live,
+    mail,
+    messages,
     notifications,
+    oauth,
+    orders,
     public,
     reports,
     uploads,
     users,
     videos,
+    ws,
 )
 
 app = FastAPI(title="PhotonV API", version="1.0.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
@@ -51,6 +59,15 @@ async def guard(request: Request, call_next):
         return JSONResponse(
             status_code=403, content={"code": "IP_BLOCKED", "message": "你的 IP 已被限制访问"}
         )
+
+    # 记录在线用户（Redis 可用时按 5 分钟窗口统计）
+    token = request.headers.get("authorization") or ""
+    if token.lower().startswith("bearer "):
+        from .security import decode_token
+
+        payload = decode_token(token[7:].strip())
+        if payload and payload.get("sub"):
+            redis.touch_online(int(payload["sub"]))
 
     # 简单滑动窗口限流
     limit = site.get_int("rate_limit_per_minute", 1200)
@@ -100,7 +117,25 @@ def health():
     return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.0.0"}
 
 
-for module in (public, auth, users, videos, comments, danmaku, interactions, notifications, reports, uploads, admin):
+for module in (
+    public,
+    auth,
+    oauth,
+    mail,
+    users,
+    videos,
+    comments,
+    danmaku,
+    interactions,
+    messages,
+    live,
+    orders,
+    notifications,
+    reports,
+    uploads,
+    ws,
+    admin,
+):
     app.include_router(module.router)
 
 # 静态资源：data/ 下的视频、封面、头像
@@ -134,6 +169,9 @@ def on_startup() -> None:
         site.warm(db)
     finally:
         db.close()
+    redis.init()
+    redis.subscribe_worker(realtime.deliver_local)
+    transcode.start_worker()
 
 
 def run() -> None:

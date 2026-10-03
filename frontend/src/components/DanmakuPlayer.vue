@@ -9,8 +9,10 @@ const props = defineProps<{
   video: any;
   danmaku: any[];
   allowDanmaku: boolean;
+  quality?: string;
+  variants?: any[];
 }>();
-const emit = defineEmits<{ (event: 'sent', item: any): void }>();
+const emit = defineEmits<{ (event: 'sent', item: any): void; (event: 'quality', value: string): void }>();
 
 const store = useAppStore();
 const videoEl = ref<HTMLVideoElement | null>(null);
@@ -27,6 +29,7 @@ const color = ref('#ffffff');
 const mode = ref<'scroll' | 'top' | 'bottom'>('scroll');
 const sending = ref(false);
 const showSettings = ref(false);
+const fontSize = ref(Math.max(12, Math.min(32, Number(store.settings.danmaku_font_size || 18))));
 const active = ref<any[]>([]);
 const busy = ref<number[]>([]);
 const shown = new Set<number>();
@@ -35,10 +38,19 @@ let lastProgressSent = 0;
 
 const scrollSeconds = computed(() => Math.max(4, Number(store.settings.danmaku_speed || 8)));
 const progressPercent = computed(() => (duration.value ? (current.value / duration.value) * 100 : 0));
+const currentSrc = computed(() => {
+  const list = props.variants || [];
+  if (props.quality && props.quality !== 'auto') {
+    const matched = list.find((item: any) => item.quality === props.quality);
+    if (matched) return matched.url;
+  }
+  return props.video.source || props.video.sourceUrl;
+});
 
 function trackCount() {
   const height = shell.value?.clientHeight || 400;
-  return Math.max(3, Math.floor((height * 0.75) / 34));
+  const line = fontSize.value + 8;
+  return Math.max(3, Math.floor((height * 0.78) / line));
 }
 
 function pickTrack(): number {
@@ -63,9 +75,9 @@ function spawn(item: any, atTime: number) {
     key: `${item.id}-${Math.random().toString(36).slice(2, 7)}`,
     content: item.content,
     color: item.color || '#ffffff',
-    fontSize: item.fontSize || 25,
+    fontSize: item.fontSize || fontSize.value,
     mode: item.mode || 'scroll',
-    top: item.mode === 'scroll' ? 12 + track * 34 : item.mode === 'top' ? 16 + track * 4 : undefined,
+    top: item.mode === 'scroll' ? 10 + track * (fontSize.value + 8) : item.mode === 'top' ? 14 + track * 4 : undefined,
     bottom: item.mode === 'bottom' ? 60 + track * 4 : undefined,
     duration: durationMs,
   };
@@ -138,7 +150,7 @@ async function send() {
       time: current.value,
       color: color.value,
       mode: mode.value,
-      font_size: 25,
+      font_size: fontSize.value,
     });
     input.value = '';
     emit('sent', item);
@@ -181,7 +193,7 @@ onBeforeUnmount(() => {
     <video
       ref="videoEl"
       class="aspect-video w-full bg-black"
-      :src="video.source || video.sourceUrl"
+      :src="currentSrc"
       :poster="video.cover"
       :autoplay="store.settings.player_autoplay !== false"
       controls
@@ -231,6 +243,15 @@ onBeforeUnmount(() => {
       <option :value="1.5">1.5x</option>
       <option :value="2">2.0x</option>
     </select>
+    <select
+      v-if="variants && variants.length > 1"
+      class="input !w-24 !py-1 text-xs"
+      :value="quality || 'auto'"
+      @change="emit('quality', (($event.target as HTMLSelectElement).value))"
+    >
+      <option value="auto">自动</option>
+      <option v-for="item in variants" :key="item.quality" :value="item.quality">{{ item.label }}</option>
+    </select>
     <button class="btn-ghost !px-2 !py-1 text-xs" @click="showSettings = !showSettings">弹幕设置</button>
     <button class="btn-ghost !px-2 !py-1 text-xs" @click="toggleFullscreen">全屏</button>
     <a v-if="video.allowDownload && video.source" :href="video.source" download class="btn-ghost !px-2 !py-1 text-xs">下载</a>
@@ -239,6 +260,10 @@ onBeforeUnmount(() => {
   <div v-if="showSettings" class="mt-2 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800/60">
     <label class="flex items-center gap-1">不透明度
       <input v-model.number="opacity" type="range" min="0.1" max="1" step="0.05" />
+    </label>
+    <label class="flex items-center gap-1">字号
+      <input v-model.number="fontSize" type="range" min="12" max="30" step="1" />
+      <span class="muted">{{ fontSize }}px</span>
     </label>
     <span>显示模式：</span>
     <select v-model="mode" class="input !w-24 !py-1 text-xs">

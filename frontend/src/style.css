@@ -1,57 +1,145 @@
+/*
+ * PhotonV 设计系统 —— 深色优先的「光子」风格
+ * 配色：紫 → 青的渐变主色，扁平半透明面板，圆角 16-20px，不用阴影堆叠
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --photonv-primary: 0 161 214;
-  --photonv-primary-soft: 186 230 253;
+  --pv-bg: #f4f5fb;
+  --pv-surface: #ffffff;
+  --pv-surface-2: #eef0f8;
+  --pv-border: rgba(15, 23, 42, 0.08);
+  --pv-text: #0f172a;
+  --pv-muted: #6b7280;
+  --pv-accent: #6d4aff;
+  --pv-accent-2: #22d3ee;
+  --pv-danger: #f43f5e;
+  --photonv-primary: 109 74 255;
+  --photonv-primary-soft: 226 220 255;
+}
+
+.dark {
+  --pv-bg: #080b14;
+  --pv-surface: #111726;
+  --pv-surface-2: #182034;
+  --pv-border: rgba(255, 255, 255, 0.08);
+  --pv-text: #e9edf7;
+  --pv-muted: #8e98b3;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  background: var(--pv-bg);
+  color: var(--pv-text);
+  -webkit-font-smoothing: antialiased;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', sans-serif;
 }
 
-.dark body {
-  @apply bg-slate-950 text-slate-200;
+::selection {
+  background: color-mix(in srgb, var(--pv-accent) 35%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--pv-muted) 40%, transparent);
+  border-radius: 999px;
 }
 
 @layer components {
+  .surface {
+    background: var(--pv-surface);
+    border: 1px solid var(--pv-border);
+    border-radius: 18px;
+  }
+
+  /* 兼容旧类名：全部换成本次新设计 */
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-800 dark:bg-slate-900;
+    background: var(--pv-surface);
+    border: 1px solid var(--pv-border);
+    border-radius: 18px;
   }
 
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm
-      font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-4 py-2 text-sm
+      font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+    border: 1px solid transparent;
   }
 
   .btn-primary {
-    @apply btn bg-primary text-white hover:brightness-110;
+    @apply btn text-white;
+    background: linear-gradient(120deg, var(--pv-accent), #9a6bff 55%, var(--pv-accent-2));
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.08);
   }
 
   .btn-ghost {
-    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50
-      dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800;
+    @apply btn;
+    background: var(--pv-surface-2);
+    border-color: var(--pv-border);
+    color: var(--pv-text);
+  }
+
+  .btn-ghost:hover {
+    border-color: color-mix(in srgb, var(--pv-accent) 55%, transparent);
+    color: var(--pv-accent);
   }
 
   .btn-danger {
-    @apply btn bg-rose-500 text-white hover:bg-rose-600;
+    @apply btn text-white;
+    background: var(--pv-danger);
   }
 
   .input {
-    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none
-      transition focus:border-primary focus:ring-2 focus:ring-primary/20
-      dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+    @apply w-full rounded-xl px-3.5 py-2 text-sm outline-none transition;
+    background: var(--pv-surface-2);
+    border: 1px solid var(--pv-border);
+    color: var(--pv-text);
+  }
+
+  .input:focus {
+    border-color: color-mix(in srgb, var(--pv-accent) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pv-accent) 18%, transparent);
+  }
+
+  .input::placeholder {
+    color: var(--pv-muted);
   }
 
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300;
+    @apply mb-1.5 block text-xs font-medium;
+    color: var(--pv-muted);
   }
 
   .link {
-    @apply text-primary hover:underline;
+    @apply transition;
+    color: var(--pv-accent);
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs;
+    background: var(--pv-surface-2);
+    border: 1px solid var(--pv-border);
+    color: var(--pv-muted);
+  }
+
+  .muted {
+    color: var(--pv-muted);
   }
 
   .table-base {
@@ -59,17 +147,30 @@ body {
   }
 
   .table-base th {
-    @apply border-b border-slate-200 px-3 py-2 text-left text-xs font-semibold text-slate-500 dark:border-slate-800;
+    @apply px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide;
+    color: var(--pv-muted);
+    border-bottom: 1px solid var(--pv-border);
   }
 
   .table-base td {
-    @apply border-b border-slate-100 px-3 py-2 align-middle dark:border-slate-800;
+    @apply px-3 py-2.5 align-middle;
+    border-bottom: 1px solid var(--pv-border);
+  }
+
+  .table-base tbody tr:hover {
+    background: color-mix(in srgb, var(--pv-accent) 6%, transparent);
+  }
+
+  .glow {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--pv-accent) 25%, transparent),
+      0 18px 50px -24px color-mix(in srgb, var(--pv-accent) 80%, transparent);
   }
 }
 
 /* 播放器进度条与弹幕层 */
+/* 播放器与弹幕层 */
 .player-shell {
-  @apply relative overflow-hidden rounded-xl bg-black;
+  @apply relative overflow-hidden rounded-2xl bg-black;
 }
 
 .danmaku-layer {

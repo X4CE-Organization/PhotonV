@@ -7,6 +7,7 @@ import { useAppStore } from '../store';
 import { formatNumber, fromNow, initials } from '../utils';
 import VideoCard from '../components/VideoCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
+import Icon from '../components/Icon.vue';
 
 const route = useRoute();
 const store = useAppStore();
@@ -21,6 +22,23 @@ const status = ref('all');
 const following = ref(false);
 const loading = ref(true);
 const follows = ref<any[]>([]);
+const showCharge = ref(false);
+const chargeCoins = ref(50);
+
+async function charge() {
+  try {
+    await api.post('/api/orders', {
+      type: 'charge',
+      username: String(route.params.username),
+      coins: Number(chargeCoins.value) || 0,
+    });
+    showCharge.value = false;
+    toast.success('充电成功，感谢支持创作者');
+    void load();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '充电失败');
+  }
+}
 
 async function load() {
   loading.value = true;
@@ -100,9 +118,17 @@ onMounted(load);
           <p class="text-xs text-slate-400">@{{ data.username }} · 加入于 {{ fromNow(data.joinedAt) }}</p>
           <p class="mt-1 text-sm text-slate-500">{{ data.bio || '这个人很神秘，什么都没写' }}</p>
         </div>
-        <div class="flex gap-2">
-          <RouterLink v-if="isSelf()" to="/settings" class="btn-ghost">编辑资料</RouterLink>
-          <button v-else class="btn-primary" @click="toggleFollow">{{ following ? '已关注' : '+ 关注' }}</button>
+        <div class="flex flex-wrap gap-2">
+          <RouterLink v-if="isSelf()" to="/settings" class="btn-ghost text-xs">编辑资料</RouterLink>
+          <template v-else>
+            <RouterLink v-if="store.isLogin" :to="`/messages?to=${encodeURIComponent(String(route.params.username))}`" class="btn-ghost text-xs">
+              <Icon name="message" :size="15" />私信
+            </RouterLink>
+            <button v-if="store.isLogin && store.settings.charge_enabled !== false" class="btn-ghost text-xs" @click="showCharge = true">
+              <Icon name="zap" :size="15" />充电
+            </button>
+            <button class="btn-primary text-xs" @click="toggleFollow">{{ following ? '已关注' : '关注' }}</button>
+          </template>
         </div>
       </div>
       <div class="flex flex-wrap gap-6 border-t border-slate-100 px-4 py-3 text-sm dark:border-slate-800">
@@ -160,6 +186,32 @@ onMounted(load);
         </div>
       </RouterLink>
       <p v-if="!follows.length" class="col-span-full py-10 text-center text-sm text-slate-400">暂无数据</p>
+    </div>
+
+    <div v-if="showCharge" class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" @click.self="showCharge = false">
+      <div class="w-full max-w-md space-y-3 rounded-2xl border border-[var(--pv-border)] bg-[var(--pv-surface)] p-5">
+        <h3 class="flex items-center gap-2 text-sm font-semibold"><Icon name="zap" :size="16" />给 {{ data.displayName }} 充电</h3>
+        <p class="text-xs muted">
+          {{ store.settings.charge_ratio ?? 100 }} 硬币 = 1 元，创作者分成 {{ store.settings.creator_share_percent ?? 70 }}%。
+          我的硬币：{{ store.user?.coins ?? 0 }}
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="value in [10, 50, 100, 500]"
+            :key="value"
+            class="chip !px-3 !py-1.5"
+            :class="chargeCoins === value ? '!border-[var(--pv-accent)] !text-[var(--pv-accent)]' : ''"
+            @click="chargeCoins = value"
+          >
+            {{ value }} 硬币
+          </button>
+        </div>
+        <input v-model.number="chargeCoins" type="number" min="1" class="input" />
+        <div class="flex justify-end gap-2">
+          <button class="btn-ghost" @click="showCharge = false">取消</button>
+          <button class="btn-primary" @click="charge">确认充电</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

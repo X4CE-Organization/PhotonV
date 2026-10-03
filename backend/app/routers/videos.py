@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from .. import models, settings_store as site
+from .. import models, redis_client as redis, settings_store as site, transcode
 from ..database import get_db
 from ..security import current_user, require_user
 from ..utils import (
@@ -133,6 +133,11 @@ def video_detail(video_id: int, db: Session = Depends(get_db), viewer: Optional[
     tag_list = tag_rows(db, [video.id]).get(video.id, [])
     flags = viewer_flags(db, [video.id], viewer).get(video.id, {})
     data = video_brief(video, tag_list, flags, with_description=True)
+    data["variants"] = transcode.variants_of(db, video.id)
+    data["hls"] = video.hls_path or ""
+    data["transcodeStatus"] = video.transcode_status
+    data["transcodeError"] = video.transcode_error
+    data["defaultQuality"] = site.get_str("player_default_quality", "auto")
     data["category"] = (
         {"id": video.category.id, "slug": video.category.slug, "name": video.category.name}
         if video.category
@@ -219,6 +224,9 @@ def create_video(
     if not needs_review:
         user.video_count += 1
         db.commit()
+    if site.get_bool("transcode_enabled", True) and source:
+        transcode.enqueue(db, video)
+    redis.cache_clear("photonv:cache:")
     audit(db, request, user, "video.create", "video", video.id, title)
     return {"ok": True, "id": video.id, "status": video.status}
 

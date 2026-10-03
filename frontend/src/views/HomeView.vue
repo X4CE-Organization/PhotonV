@@ -5,6 +5,7 @@ import { api } from '../api';
 import { useAppStore } from '../store';
 import { formatNumber, fromNow } from '../utils';
 import VideoCard from '../components/VideoCard.vue';
+import Icon from '../components/Icon.vue';
 
 const store = useAppStore();
 const data = ref<any>({ carousel: [], recommend: [], latest: [], ranking: [], rankingByLike: [], featured: [], announcements: [], stats: {} });
@@ -37,7 +38,9 @@ onUnmounted(() => window.clearInterval(timer));
 
 <template>
   <div class="space-y-5">
-    <p v-if="data.notice" class="rounded-lg bg-primary/10 px-4 py-2 text-sm text-primary">📢 {{ data.notice }}</p>
+    <p v-if="data.notice" class="surface flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--pv-accent)]">
+      <Icon name="info" :size="16" />{{ data.notice }}
+    </p>
 
     <div class="grid gap-4 lg:grid-cols-[2fr_1fr]">
       <div class="relative overflow-hidden rounded-xl bg-slate-900">
@@ -92,7 +95,7 @@ onUnmounted(() => window.clearInterval(timer));
 
       <aside class="space-y-4">
         <div v-if="store.settings.show_home_ranking !== false" class="card p-4">
-          <h3 class="mb-3 text-sm font-semibold">🔥 热门排行</h3>
+          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="flame" :size="16" class="text-[var(--pv-accent)]" />热门排行</h3>
           <ol class="space-y-2">
             <li v-for="(video, index) in data.ranking" :key="video.id" class="flex gap-2 text-sm">
               <span class="w-4 shrink-0 text-center text-xs font-semibold" :class="index < 3 ? 'text-primary' : 'text-slate-400'">{{ index + 1 }}</span>
@@ -103,7 +106,7 @@ onUnmounted(() => window.clearInterval(timer));
         </div>
 
         <div class="card p-4">
-          <h3 class="mb-3 text-sm font-semibold">📢 公告</h3>
+          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="info" :size="16" class="text-[var(--pv-accent)]" />公告</h3>
           <ul class="space-y-2 text-sm">
             <li v-for="item in data.announcements" :key="item.id">
               <div class="font-medium">{{ item.title }}</div>
@@ -115,7 +118,7 @@ onUnmounted(() => window.clearInterval(timer));
         </div>
 
         <div class="card p-4">
-          <h3 class="mb-3 text-sm font-semibold">🏷 热门标签</h3>
+          <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="tag" :size="16" class="text-[var(--pv-accent)]" />热门标签</h3>
           <div class="flex flex-wrap gap-2">
             <RouterLink
               v-for="item in store.hotTags"

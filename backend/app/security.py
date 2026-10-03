@@ -82,6 +82,30 @@ def decode_token(token: str) -> Optional[dict[str, Any]]:
     return payload
 
 
+def sign_json(payload: dict[str, Any], expires_seconds: int = 600) -> str:
+    """给 OAuth state 之类的临时数据签名（复用同一套 HMAC）。"""
+    now = int(time.time())
+    body = _b64encode(json.dumps({**payload, "iat": now, "exp": now + expires_seconds}, separators=(",", ":")).encode())
+    signature = _sign(body)
+    return f"{body}.{signature}"
+
+
+def verify_json(token: str) -> Optional[dict[str, Any]]:
+    parts = (token or "").split(".")
+    if len(parts) != 2:
+        return None
+    body, signature = parts
+    if not hmac.compare_digest(_sign(body), signature):
+        return None
+    try:
+        payload = json.loads(_b64decode(body))
+    except (ValueError, json.JSONDecodeError):
+        return None
+    if not payload.get("exp") or payload["exp"] < time.time():
+        return None
+    return payload
+
+
 def token_from_request(request: Request) -> Optional[str]:
     header = request.headers.get("authorization") or ""
     if header.lower().startswith("bearer "):

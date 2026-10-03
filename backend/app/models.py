@@ -58,6 +58,16 @@ class User(Base):
     show_email: Mapped[bool] = mapped_column(Boolean, default=False)
     theme: Mapped[str] = mapped_column(String(16), default="light")
 
+    # 会员 / 直播 / 邮件
+    membership_level: Mapped[int] = mapped_column(Integer, default=0)
+    membership_expires: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    total_earned: Mapped[int] = mapped_column(Integer, default=0)
+    can_live: Mapped[bool] = mapped_column(Boolean, default=False)
+    stream_key: Mapped[str] = mapped_column(String(64), default="")
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    mail_optout: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_bonus_date: Mapped[str] = mapped_column(String(16), default="")
+
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     last_login_ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -153,6 +163,11 @@ class Video(Base):
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # 转码与多清晰度
+    transcode_status: Mapped[str] = mapped_column(String(16), default="pending")
+    transcode_error: Mapped[str] = mapped_column(String(500), default="")
+    hls_path: Mapped[str] = mapped_column(String(500), default="")
 
     author: Mapped[User] = relationship(back_populates="videos")
     category: Mapped[Optional[Category]] = relationship()
@@ -419,3 +434,168 @@ class RateLimit(Base):
     key: Mapped[str] = mapped_column(String(160), primary_key=True)
     count: Mapped[int] = mapped_column(Integer, default=0)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+# ---------------------------------------------------------------- 邮件
+
+
+class MailCode(Base):
+    __tablename__ = "mail_codes"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(160), index=True)
+    code: Mapped[str] = mapped_column(String(16))
+    purpose: Mapped[str] = mapped_column(String(16), default="verify")
+    user_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class MailLog(Base):
+    __tablename__ = "mail_logs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    to_email: Mapped[str] = mapped_column(String(160))
+    subject: Mapped[str] = mapped_column(String(200), default="")
+    category: Mapped[str] = mapped_column(String(24), default="system")
+    status: Mapped[str] = mapped_column(String(16), default="sent")
+    error: Mapped[str] = mapped_column(String(500), default="")
+    user_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ------------------------------------------------------------ 第三方登录
+
+
+class OAuthAccount(Base):
+    __tablename__ = "oauth_accounts"
+    __table_args__ = (UniqueConstraint("provider", "provider_user_id", name="uq_oauth_provider_user"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    provider: Mapped[str] = mapped_column(String(24))
+    provider_user_id: Mapped[str] = mapped_column(String(64))
+    provider_username: Mapped[str] = mapped_column(String(64), default="")
+    provider_email: Mapped[str] = mapped_column(String(160), default="")
+    avatar: Mapped[str] = mapped_column(String(500), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ----------------------------------------------------------------- 私信
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+    __table_args__ = (UniqueConstraint("user_a", "user_b", name="uq_conversation_pair"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_a: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    user_b: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    last_message: Mapped[str] = mapped_column(String(300), default="")
+    last_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    unread_a: Mapped[int] = mapped_column(Integer, default=0)
+    unread_b: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class DirectMessage(Base):
+    __tablename__ = "direct_messages"
+    __table_args__ = (Index("idx_dm_conversation", "conversation_id", "id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    conversation_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    sender_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    content: Mapped[str] = mapped_column(Text)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ----------------------------------------------------------------- 直播
+
+
+class LiveRoom(Base):
+    __tablename__ = "live_rooms"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    title: Mapped[str] = mapped_column(String(120))
+    cover: Mapped[str] = mapped_column(String(500), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    category_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+    )
+    stream_key: Mapped[str] = mapped_column(String(64), default="")
+    play_url: Mapped[str] = mapped_column(String(500), default="")
+    status: Mapped[str] = mapped_column(String(16), default="offline")
+    viewer_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_viewers: Mapped[int] = mapped_column(Integer, default=0)
+    danmaku_count: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class LiveChat(Base):
+    __tablename__ = "live_chats"
+    __table_args__ = (Index("idx_live_chat_room", "room_id", "id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    room_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("live_rooms.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    content: Mapped[str] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ------------------------------------------------------------ 会员 / 订单
+
+
+class MembershipPlan(Base):
+    __tablename__ = "membership_plans"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(48))
+    days: Mapped[int] = mapped_column(Integer, default=30)
+    price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    description: Mapped[str] = mapped_column(String(255), default="")
+    badge: Mapped[str] = mapped_column(String(24), default="")
+    sort: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Order(Base):
+    __tablename__ = "orders"
+    __table_args__ = (Index("idx_orders_user", "user_id", "id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    order_no: Mapped[str] = mapped_column(String(40), unique=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    type: Mapped[str] = mapped_column(String(16), default="membership")
+    plan_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    target_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    title: Mapped[str] = mapped_column(String(120), default="")
+    amount_cents: Mapped[int] = mapped_column(Integer, default=0)
+    coins: Mapped[int] = mapped_column(Integer, default=0)
+    pay_method: Mapped[str] = mapped_column(String(24), default="manual")
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    note: Mapped[str] = mapped_column(String(255), default="")
+    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class VideoVariant(Base):
+    __tablename__ = "video_variants"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    video_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("videos.id", ondelete="CASCADE"))
+    quality: Mapped[str] = mapped_column(String(16))
+    label: Mapped[str] = mapped_column(String(24), default="")
+    path: Mapped[str] = mapped_column(String(500))
+    filesize: Mapped[int] = mapped_column(BigInteger, default=0)
+    width: Mapped[int] = mapped_column(Integer, default=0)
+    height: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

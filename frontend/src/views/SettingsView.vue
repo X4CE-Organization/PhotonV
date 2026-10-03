@@ -4,6 +4,7 @@ import { api } from '../api';
 import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
 import { formatTime } from '../utils';
+import Icon from '../components/Icon.vue';
 
 const store = useAppStore();
 const form = ref({
@@ -22,6 +23,38 @@ const password = ref({ old_password: '', new_password: '', new_password2: '' });
 const saving = ref(false);
 const savingPassword = ref(false);
 const avatarInput = ref<HTMLInputElement | null>(null);
+const mailPref = ref<any>(null);
+const bindings = ref<{ bindings: any[]; providers: any[] } | null>(null);
+
+async function loadExtras() {
+  try {
+    mailPref.value = await api.get<any>('/api/me/mail-preference');
+  } catch {
+    mailPref.value = null;
+  }
+  try {
+    bindings.value = await api.get<any>('/api/auth/oauth/bindings');
+  } catch {
+    bindings.value = null;
+  }
+}
+
+async function toggleMail(optout: boolean) {
+  await api.put('/api/me/mail-preference', { optout });
+  if (mailPref.value) mailPref.value.optout = optout;
+  toast.success(optout ? '已退订邮件通知' : '已开启邮件通知');
+}
+
+function bindProvider(provider: string) {
+  window.location.href = `/api/auth/oauth/${provider}/start?bind=1`;
+}
+
+async function unbind(provider: string) {
+  if (!window.confirm('确定解绑该第三方账号吗？')) return;
+  await api.del(`/api/auth/oauth/${provider}`);
+  toast.success('已解绑');
+  void loadExtras();
+}
 
 function fill() {
   const user = store.user;
@@ -78,7 +111,10 @@ async function uploadBanner(file: File) {
   toast.success('横幅已上传，记得保存');
 }
 
-onMounted(fill);
+onMounted(() => {
+  fill();
+  void loadExtras();
+});
 </script>
 
 <template>
@@ -169,6 +205,58 @@ onMounted(fill);
         <div class="flex justify-between"><dt class="text-slate-500">注册时间</dt><dd>{{ formatTime(store.user?.createdAt) }}</dd></div>
         <div class="flex justify-between"><dt class="text-slate-500">最近登录</dt><dd>{{ formatTime(store.user?.lastLoginAt) }}</dd></div>
       </dl>
+    </section>
+
+    <section v-if="mailPref" class="card p-4">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="mail" :size="17" />邮件通知</h2>
+      <p class="mt-2 text-xs muted">
+        {{ mailPref.enabled ? `回复、投币、订单等通知可以发送到 ${mailPref.email || '你的邮箱'}。` : '本站暂未开启邮件服务，通知只会出现在站内信里。' }}
+      </p>
+      <label class="mt-3 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          :checked="!mailPref.optout"
+          :disabled="!mailPref.enabled"
+          @change="toggleMail(!(($event.target as HTMLInputElement).checked))"
+        />
+        接收邮件通知
+      </label>
+      <p v-if="!mailPref.email" class="mt-2 text-xs text-amber-500">还没有填写邮箱，请先在上方「个人资料」里补上。</p>
+    </section>
+
+    <section v-if="bindings?.providers?.length" class="card p-4">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="key" :size="17" />第三方账号绑定</h2>
+      <ul class="mt-3 divide-y divide-[var(--pv-border)] text-sm">
+        <li v-for="provider in bindings.providers" :key="provider.id" class="flex items-center gap-3 py-2.5">
+          <span>{{ provider.name }}</span>
+          <span v-if="bindings.bindings.find((item) => item.provider === provider.id)" class="chip text-[11px]">
+            已绑定 {{ bindings.bindings.find((item) => item.provider === provider.id)?.username }}
+          </span>
+          <span class="ml-auto">
+            <button
+              v-if="bindings.bindings.find((item) => item.provider === provider.id)"
+              class="text-xs text-rose-500 hover:underline"
+              @click="unbind(provider.id)"
+            >
+              解绑
+            </button>
+            <button v-else class="text-xs text-[var(--pv-accent)] hover:underline" @click="bindProvider(provider.id)">去绑定</button>
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card p-4 text-sm">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="radio" :size="17" />直播与会员</h2>
+      <dl class="mt-3 space-y-2">
+        <div class="flex justify-between"><dt class="muted">直播权限</dt><dd>{{ store.user?.canLive ? '已开通' : '未开通（联系管理员）' }}</dd></div>
+        <div class="flex justify-between">
+          <dt class="muted">会员状态</dt>
+          <dd>{{ store.user?.membershipActive ? `已开通 · 到期 ${formatTime(store.user?.membershipExpires)}` : '未开通' }}</dd>
+        </div>
+        <div class="flex justify-between"><dt class="muted">收到充电</dt><dd>{{ store.user?.totalEarned ?? 0 }} 硬币</dd></div>
+      </dl>
+      <RouterLink to="/membership" class="btn-ghost mt-3 text-xs">前往会员中心</RouterLink>
     </section>
   </div>
 </template>

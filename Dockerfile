@@ -28,7 +28,7 @@ RUN if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
       sed -i "s|deb.debian.org|$APT_MIRROR|g" /etc/apt/sources.list.d/debian.sources 2>/dev/null || true; \
     fi \
  && apt-get update \
- && apt-get install -y --no-install-recommends postgresql-client ca-certificates \
+ && apt-get install -y --no-install-recommends postgresql-client ca-certificates ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

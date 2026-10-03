@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
-from .. import models, settings_store as site
+from .. import models, realtime, redis_client as redis, settings_store as site, transcode
 from ..database import backup_database, delete_backup, get_db, list_backups
 from ..security import hash_password, require_admin, require_superadmin
 from ..settings_registry import SETTING_GROUPS, SETTINGS
@@ -61,6 +61,29 @@ def dashboard(db: Session = Depends(get_db), admin: models.User = Depends(requir
         "reports": {
             "pending": _count(db, models.Report, models.Report.status == "pending"),
             "total": _count(db, models.Report),
+        },
+        "live": {
+            "total": _count(db, models.LiveRoom),
+            "living": _count(db, models.LiveRoom, models.LiveRoom.status == "live"),
+            "banned": _count(db, models.LiveRoom, models.LiveRoom.status == "banned"),
+            "viewers": int(db.scalar(select(func.coalesce(func.sum(models.LiveRoom.viewer_count), 0))) or 0),
+        },
+        "orders": {
+            "pending": _count(db, models.Order, models.Order.status == "pending"),
+            "paid": _count(db, models.Order, models.Order.status == "paid"),
+            "revenueCents": int(
+                db.scalar(
+                    select(func.coalesce(func.sum(models.Order.amount_cents), 0)).where(models.Order.status == "paid")
+                )
+                or 0
+            ),
+        },
+        "system": {
+            "redis": redis.info(),
+            "ffmpeg": transcode.status(),
+            "transcoding": _count(db, models.Video, models.Video.transcode_status == "processing"),
+            "transcodePending": _count(db, models.Video, models.Video.transcode_status == "pending"),
+            "websocket": realtime.stats(),
         },
         "trend": [{"day": str(row[0])[:10], "count": int(row[1])} for row in trend_rows],
         "pendingVideos": [
@@ -928,3 +951,68 @@ def cleanup_logs(
     db.commit()
     audit(db, request, admin, "admin.cleanup", detail=f"login={removed_login},rate={removed_rate}")
     return {"ok": True, "removedLoginLogs": int(removed_login or 0), "removedRateLimits": int(removed_rate or 0)}
+
+
+# ------------------------------------------------------------ 基础设施
+
+
+@router.get("/infra")
+def infra_status(admin: models.User = Depends(require_admin), db: Session = Depends(get_db)):
+    return {
+        "redis": redis.info(),
+        "ffmpeg": transcode.status(),
+        "transcode": {
+            "pending": _count(db, models.Video, models.Video.transcode_status == "pending"),
+            "processing": _count(db, models.Video, models.Video.transcode_status == "processing"),
+            "done": _count(db, models.Video, models.Video.transcode_status == "done"),
+            "failed": _count(db, models.Video, models.Video.transcode_status == "failed"),
+            "skipped": _count(db, models.Video, models.Video.transcode_status == "skipped"),
+        },
+        "realtime": realtime.stats(),
+        "variants": _count(db, models.VideoVariant),
+    }
+
+
+@router.post("/cache/clear")
+def clear_cache(request: Request, admin: models.User = Depends(require_superadmin), db: Session = Depends(get_db)):
+    removed = redis.cache_clear("photonv:cache:")
+    audit(db, request, admin, "admin.cache_clear", detail=str(removed))
+    return {"ok": True, "removed": removed}
+
+
+@router.post("/videos/{video_id}/transcode")
+def retranscode(
+    video_id: int,
+    request: Request,
+    admin: models.User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    video = db.get(models.Video, video_id)
+    if not video:
+        raise fail(404, "视频不存在")
+    transcode.enqueue(db, video)
+    audit(db, request, admin, "admin.transcode_enqueue", "video", video_id)
+    return {"ok": True}
+
+
+@router.post("/users/{user_id}/live-permission")
+def set_live_permission(
+    user_id: int,
+    payload: dict,
+    request: Request,
+    admin: models.User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.get(models.User, user_id)
+    if not user:
+        raise fail(404, "用户不存在")
+    user.can_live = bool(payload.get("canLive"))
+    db.commit()
+    notify(
+        db, user.id, "system", "直播权限变更",
+        "管理员已为你开通直播权限，可以在「直播 → 我的直播间」里配置并开播了。"
+        if user.can_live
+        else "你的直播权限已被关闭。",
+    )
+    audit(db, request, admin, "admin.live_permission", "user", user_id, user.can_live)
+    return {"ok": True, "canLive": user.can_live}

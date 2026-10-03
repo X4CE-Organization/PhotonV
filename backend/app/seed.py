@@ -7,22 +7,31 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+import secrets
+from datetime import timedelta
+
 from . import models
 from .config import ROOT_DIR, settings
 from .security import hash_password
 from .utils import now
 
 CATEGORIES = [
-    ("anime", "动画", "🎨", "番剧、手书、MMD、动画短片"),
-    ("game", "游戏", "🎮", "实况、攻略、赛事与整活"),
-    ("knowledge", "知识", "📚", "科普、课程、学习笔记"),
-    ("tech", "科技", "💻", "数码、编程、硬件评测"),
-    ("life", "生活", "🏠", "日常、Vlog、手工与宠物"),
-    ("music", "音乐", "🎵", "翻唱、演奏、原创音乐"),
-    ("film", "影视", "🎬", "剪辑、解说、影评"),
-    ("food", "美食", "🍜", "探店、做饭、吃播"),
-    ("sports", "运动", "⚽", "健身、球类、极限运动"),
-    ("dance", "舞蹈", "💃", "宅舞、街舞、编舞"),
+    ("anime", "动画", "sparkles", "番剧、手书、MMD、动画短片"),
+    ("game", "游戏", "gamepad", "实况、攻略、赛事与整活"),
+    ("knowledge", "知识", "book", "科普、课程、学习笔记"),
+    ("tech", "科技", "cpu", "数码、编程、硬件评测"),
+    ("life", "生活", "home", "日常、Vlog、手工与宠物"),
+    ("music", "音乐", "music", "翻唱、演奏、原创音乐"),
+    ("film", "影视", "film", "剪辑、解说、影评"),
+    ("food", "美食", "utensils", "探店、做饭、吃播"),
+    ("sports", "运动", "dumbbell", "健身、球类、极限运动"),
+    ("dance", "舞蹈", "activity", "宅舞、街舞、编舞"),
+]
+
+MEMBERSHIP_PLANS = [
+    ("月度会员", 30, 1500, "专属标识 · 上传更大视频 · 可开播", 0),
+    ("季度会员", 90, 4000, "月度会员全部权益，相当于每月 13.3 元", 1),
+    ("年度会员", 365, 13800, "月度会员全部权益，相当于每月 11.5 元", 2),
 ]
 
 DEMO_VIDEOS = [
@@ -176,6 +185,21 @@ def ensure_seed(db: Session) -> None:
             db.add(models.Category(slug=slug, name=name, icon=icon, description=description, sort=sort))
         db.commit()
 
+    # 会员套餐
+    if not db.scalar(select(func.count(models.MembershipPlan.id))):
+        for name, days, price, description, sort in MEMBERSHIP_PLANS:
+            db.add(
+                models.MembershipPlan(
+                    name=name,
+                    days=days,
+                    price_cents=price,
+                    description=description,
+                    badge="大会员",
+                    sort=sort,
+                )
+            )
+        db.commit()
+
     # 示例用户
     if not db.scalar(select(models.User).where(models.User.username == "alice")):
         for name, bio in (
@@ -191,6 +215,7 @@ def ensure_seed(db: Session) -> None:
                     display_name=name,
                     bio=bio,
                     coins=20,
+                    email_verified=True,
                 )
             )
         db.commit()
@@ -198,6 +223,15 @@ def ensure_seed(db: Session) -> None:
             user = db.scalar(select(models.User).where(models.User.username == name))
             if user:
                 db.add(models.FavoriteFolder(user_id=user.id, name="默认收藏夹", is_default=True))
+        db.commit()
+
+    # 超管：直播权限 + 会员身份
+    root_user = db.scalar(select(models.User).where(models.User.username == settings.root_username))
+    if root_user and not root_user.can_live:
+        root_user.can_live = True
+        root_user.coins = max(root_user.coins, 200)
+        root_user.membership_level = 2
+        root_user.membership_expires = now() + timedelta(days=365)
         db.commit()
 
     # 示例视频
@@ -228,6 +262,8 @@ def ensure_seed(db: Session) -> None:
                 favorites=index + 1,
                 is_featured=index < 2,
                 published_at=now(),
+                transcode_status="skipped",
+                transcode_error="示例视频跳过转码",
             )
             db.add(video)
             db.commit()
@@ -315,3 +351,23 @@ def ensure_seed(db: Session) -> None:
                 )
             )
         db.commit()
+
+    # 示例直播间
+    if not db.scalar(select(func.count(models.LiveRoom.id))):
+        owner = db.scalar(select(models.User).where(models.User.username == settings.root_username))
+        category = db.scalar(select(models.Category).where(models.Category.slug == "knowledge"))
+        if owner:
+            room = models.LiveRoom(
+                owner_id=owner.id,
+                title="PhotonV 直播间 · 随时来聊",
+                cover="/media/covers/banner-1.svg",
+                description="这是示例直播间。接入 nginx-rtmp / SRS 后填好推流地址即可开播。",
+                category_id=category.id if category else None,
+                stream_key=secrets.token_hex(12),
+                play_url="",
+                status="offline",
+            )
+            owner.stream_key = room.stream_key
+            owner.can_live = True
+            db.add(room)
+            db.commit()

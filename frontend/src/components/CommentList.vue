@@ -5,6 +5,7 @@ import { api, query } from '../api';
 import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
 import { fromNow, initials } from '../utils';
+import Icon from './Icon.vue';
 import PaginationBar from './PaginationBar.vue';
 
 const props = defineProps<{ videoId: number; allowComment: boolean }>();
@@ -137,7 +138,9 @@ onMounted(load);
           </div>
           <p class="mt-1 whitespace-pre-wrap break-words text-sm">{{ item.content }}</p>
           <div class="mt-1 flex items-center gap-3 text-xs text-slate-400">
-            <button :class="item.liked ? 'text-rose-500' : 'hover:text-rose-500'" @click="like(item)">👍 {{ item.likeCount }}</button>
+            <button class="inline-flex items-center gap-1" :class="item.liked ? 'text-rose-500' : 'hover:text-rose-500'" @click="like(item)">
+              <Icon name="heart" :size="13" />{{ item.likeCount }}
+            </button>
             <button v-if="allowComment" class="hover:text-primary" @click="replyTo = item">回复</button>
             <button v-if="item.canDelete" class="hover:text-primary" @click="pin(item)">{{ item.isPinned ? '取消置顶' : '置顶' }}</button>
             <button v-if="item.canDelete" class="hover:text-rose-500" @click="remove(item)">删除</button>

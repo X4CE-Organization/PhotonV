@@ -5,6 +5,7 @@ import { api, query } from '../../api';
 import { toast } from '../../composables/toast';
 import { formatNumber, formatSize, fromNow, initials } from '../../utils';
 import PaginationBar from '../../components/PaginationBar.vue';
+import Icon from '../../components/Icon.vue';
 
 const items = ref<any[]>([]);
 const total = ref(0);
@@ -127,8 +128,11 @@ onMounted(load);
               <span v-if="video.deleted" class="mt-1 block text-rose-500">已删除</span>
             </td>
             <td class="text-xs text-slate-500">
-              ▶{{ formatNumber(video.views) }} · 👍{{ formatNumber(video.likes) }}<br />
-              💬{{ formatNumber(video.comments) }} · 💭{{ formatNumber(video.danmaku) }}
+              <span class="inline-flex items-center gap-1"><Icon name="play" :size="12" />{{ formatNumber(video.views) }}</span>
+              <span class="ml-2 inline-flex items-center gap-1"><Icon name="heart" :size="12" />{{ formatNumber(video.likes) }}</span>
+              <br />
+              <span class="inline-flex items-center gap-1"><Icon name="message" :size="12" />{{ formatNumber(video.comments) }}</span>
+              <span class="ml-2 inline-flex items-center gap-1"><Icon name="zap" :size="12" />{{ formatNumber(video.danmaku) }}</span>
             </td>
             <td class="text-xs text-slate-400">{{ formatSize(video.filesize) }}</td>
             <td class="text-xs text-slate-400">{{ fromNow(video.createdAt) }}</td>

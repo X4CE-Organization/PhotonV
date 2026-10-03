@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
-from .. import models, settings_store as site
+from .. import models, redis_client as redis, settings_store as site
 from ..database import get_db
 from ..security import current_user
 from ..utils import iso, pagination, tag_rows, user_brief, video_brief, viewer_flags
@@ -29,11 +29,16 @@ def public_settings():
 
 @router.get("/meta")
 def meta(db: Session = Depends(get_db)):
+    ttl = site.get_int("cache_meta_seconds", 60)
+    if ttl:
+        cached = redis.cache_get("photonv:cache:meta")
+        if cached:
+            return cached
     categories = db.scalars(
         select(models.Category).where(models.Category.is_active.is_(True)).order_by(models.Category.sort.asc())
     ).all()
     hot_tags = db.scalars(select(models.Tag).order_by(models.Tag.use_count.desc()).limit(24)).all()
-    return {
+    payload = {
         "settings": site.public_settings(),
         "categories": [
             {"id": item.id, "slug": item.slug, "name": item.name, "icon": item.icon,
@@ -42,10 +47,19 @@ def meta(db: Session = Depends(get_db)):
         ],
         "hotTags": [{"id": item.id, "name": item.name, "color": item.color, "count": item.use_count} for item in hot_tags],
     }
+    if ttl:
+        redis.cache_set("photonv:cache:meta", payload, ttl)
+    return payload
 
 
 @router.get("/home")
 def home(db: Session = Depends(get_db), viewer: Optional[models.User] = Depends(current_user)):
+    ttl = site.get_int("cache_home_seconds", 10)
+    anonymous = viewer is None
+    if ttl and anonymous:
+        cached = redis.cache_get("photonv:cache:home")
+        if cached:
+            return cached
     recommend_count = site.get_int("home_recommend_count", 24)
     ranking_size = site.get_int("home_ranking_size", 10)
 
@@ -97,7 +111,7 @@ def home(db: Session = Depends(get_db), viewer: Optional[models.User] = Depends(
         ).all()
     ]
 
-    return {
+    payload = {
         "notice": site.get_str("home_notice", ""),
         "carousel": carousel,
         "stats": stats,
@@ -107,7 +121,11 @@ def home(db: Session = Depends(get_db), viewer: Optional[models.User] = Depends(
         "ranking": decorate(db, ranking_rows, viewer),
         "rankingByLike": decorate(db, like_rows, viewer),
         "announcements": announcements,
+        "online": redis.online_count(),
     }
+    if ttl and anonymous:
+        redis.cache_set("photonv:cache:home", payload, ttl)
+    return payload
 
 
 @router.get("/categories")

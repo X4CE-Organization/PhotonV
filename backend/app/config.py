@@ -57,6 +57,16 @@ class Settings:
         "DATABASE_URL", "postgresql+psycopg://photonv:photonv@localhost:5432/photonv"
     )
 
+    # --- Redis（可选：缓存 / 分布式限流 / 在线人数 / 实时消息广播）------------
+    redis_url: str = (os.getenv("REDIS_URL") or "").strip()
+    cache_ttl: int = _int("CACHE_TTL_SECONDS", 20)
+
+    # --- 转码 --------------------------------------------------------------
+    ffmpeg_bin: str = (os.getenv("FFMPEG_BIN") or "").strip()
+    transcode_enabled: bool = _bool("TRANSCODE_ENABLED", True)
+    transcode_concurrency: int = max(1, _int("TRANSCODE_CONCURRENCY", 1))
+    hls_segment_seconds: int = max(2, _int("HLS_SEGMENT_SECONDS", 6))
+
     data_dir: Path = _resolve(os.getenv("DATA_DIR", "./data"))
     max_video_mb: int = _int("MAX_VIDEO_MB", 2048)
     max_image_mb: int = _int("MAX_IMAGE_MB", 16)
@@ -82,11 +92,22 @@ class Settings:
         return self.data_dir / "backups"
 
     @property
+    def processed_dir(self) -> Path:
+        """转码产物：多清晰度 mp4 与 HLS 分片。"""
+        return self.data_dir / "processed"
+
+    @property
     def frontend_dist(self) -> Path:
         return ROOT_DIR / "frontend" / "dist"
 
     def ensure_dirs(self) -> None:
-        for directory in (self.videos_dir, self.covers_dir, self.avatars_dir, self.backups_dir):
+        for directory in (
+            self.videos_dir,
+            self.covers_dir,
+            self.avatars_dir,
+            self.backups_dir,
+            self.processed_dir,
+        ):
             directory.mkdir(parents=True, exist_ok=True)
 
 

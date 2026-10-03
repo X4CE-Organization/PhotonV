@@ -75,6 +75,14 @@ def user_me(user: models.User) -> dict[str, Any]:
             "lastLoginAt": iso(user.last_login_at),
             "isAdmin": user.is_admin,
             "isSuperadmin": user.is_superadmin,
+            "membershipLevel": user.membership_level,
+            "membershipExpires": iso(user.membership_expires),
+            "membershipActive": bool(user.membership_expires and user.membership_expires > now()),
+            "totalEarned": user.total_earned,
+            "canLive": bool(user.can_live or user.is_admin),
+            "emailVerified": bool(user.email_verified),
+            "mailOptout": bool(user.mail_optout),
+            "streamKey": user.stream_key or "",
         }
     )
     return data
@@ -244,6 +252,11 @@ def rate_limit(key: str, interval_seconds: int) -> bool:
     """简单内存限流：同一 key 在 interval 内只允许一次。"""
     if interval_seconds <= 0:
         return True
+    from . import redis_client as _redis
+
+    shared = _redis.rate_limit(key, interval_seconds)
+    if shared is not None:
+        return shared
     current = time.time()
     last = _buckets.get(key, 0)
     if current - last < interval_seconds:

@@ -2,11 +2,12 @@
 import { onMounted, ref } from 'vue';
 import { api } from '../../api';
 import { toast } from '../../composables/toast';
+import Icon from '../../components/Icon.vue';
 
 const categories = ref<any[]>([]);
 const tags = ref<any[]>([]);
 const editing = ref<any>(null);
-const form = ref({ name: '', slug: '', icon: '🎬', description: '', sort: 0, isActive: true });
+const form = ref({ name: '', slug: '', icon: 'film', description: '', sort: 0, isActive: true });
 
 async function load() {
   const [categoryData, tagData] = await Promise.all([
@@ -19,7 +20,7 @@ async function load() {
 
 function openCreate() {
   editing.value = { id: 0 };
-  form.value = { name: '', slug: '', icon: '🎬', description: '', sort: categories.value.length, isActive: true };
+  form.value = { name: '', slug: '', icon: 'film', description: '', sort: categories.value.length, isActive: true };
 }
 
 function openEdit(item: any) {
@@ -83,7 +84,7 @@ onMounted(load);
         </thead>
         <tbody>
           <tr v-for="item in categories" :key="item.id">
-            <td class="text-lg">{{ item.icon }}</td>
+            <td><Icon :name="item.icon" :size="18" /></td>
             <td>{{ item.name }}</td>
             <td class="font-mono text-xs text-slate-400">{{ item.slug }}</td>
             <td class="text-xs text-slate-500">{{ item.description }}</td>
@@ -121,7 +122,7 @@ onMounted(load);
         <h2 class="text-sm font-semibold">{{ editing.id ? '编辑分区' : '新建分区' }}</h2>
         <div><label class="label">名称</label><input v-model="form.name" class="input" /></div>
         <div><label class="label">标识（用于地址，留空自动生成）</label><input v-model="form.slug" class="input" /></div>
-        <div><label class="label">图标（emoji）</label><input v-model="form.icon" class="input" /></div>
+        <div><label class="label">图标名称（内置 SVG 图标，如 film / gamepad / book / music / cpu / home）</label><input v-model="form.icon" class="input" /></div>
         <div><label class="label">描述</label><input v-model="form.description" class="input" /></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="label">排序</label><input v-model.number="form.sort" type="number" class="input" /></div>

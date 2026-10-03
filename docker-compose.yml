@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: photonv-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - photonv-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   db:
     image: postgres:16-alpine
     container_name: photonv-db
@@ -30,6 +43,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - '8080:8080'
     environment:
@@ -38,6 +53,9 @@ services:
       HOST: 0.0.0.0
       SITE_URL: ${SITE_URL:-http://localhost:8080}
       DATABASE_URL: postgresql+psycopg://photonv:${POSTGRES_PASSWORD:-photonv-change-me}@db:5432/photonv
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      TRANSCODE_ENABLED: ${TRANSCODE_ENABLED:-true}
+      TRANSCODE_CONCURRENCY: ${TRANSCODE_CONCURRENCY:-1}
       # CHANGE THIS: openssl rand -hex 48
       SECRET_KEY: ${SECRET_KEY:-please-change-this-to-a-long-random-string}
       MAX_VIDEO_MB: ${MAX_VIDEO_MB:-2048}
@@ -54,3 +72,4 @@ services:
 
 volumes:
   photonv-db:
+  photonv-redis:

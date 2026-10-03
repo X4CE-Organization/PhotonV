@@ -28,6 +28,14 @@ export interface SiteUser {
   banner?: string;
   createdAt?: string;
   lastLoginAt?: string;
+  membershipLevel?: number;
+  membershipExpires?: string | null;
+  membershipActive?: boolean;
+  totalEarned?: number;
+  canLive?: boolean;
+  emailVerified?: boolean;
+  mailOptout?: boolean;
+  streamKey?: string;
 }
 
 export const useAppStore = defineStore('app', {

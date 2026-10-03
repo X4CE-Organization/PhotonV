@@ -14,6 +14,12 @@ SETTING_GROUPS: list[dict[str, str]] = [
     {"key": "security", "name": "安全防护", "description": "限流、验证码与维护模式", "icon": "shield"},
     {"key": "maintenance", "name": "备份与维护", "description": "自动备份、日志清理与缓存", "icon": "database"},
     {"key": "legal", "name": "页脚与协议", "description": "备案号、版权信息与用户协议", "icon": "scale"},
+    {"key": "transcode", "name": "转码与清晰度", "description": "ffmpeg 转码、多清晰度与 HLS", "icon": "film"},
+    {"key": "mail", "name": "邮件 / SMTP", "description": "SMTP 发信、验证码与邮件通知", "icon": "mail"},
+    {"key": "oauth", "name": "第三方登录", "description": "GitHub / Gitee / Google / 自定义 OAuth2", "icon": "key-round"},
+    {"key": "member", "name": "会员与充电", "description": "会员套餐、充值、充电与支付方式", "icon": "crown"},
+    {"key": "live", "name": "直播", "description": "开播权限、推流与播放地址、聊天设置", "icon": "radio"},
+    {"key": "infra", "name": "缓存与分布式", "description": "Redis 缓存、在线人数与限流", "icon": "server"},
 ]
 
 
@@ -105,7 +111,9 @@ SETTINGS: list[dict] = [
     _f("enable_danmaku", "开启弹幕", "boolean", True, "comment", public=True),
     _f("danmaku_max_length", "弹幕最大长度", "number", 60, "comment", public=True, min=5, max=200),
     _f("danmaku_interval", "弹幕最小间隔（秒）", "number", 3, "comment", min=0, max=600),
-    _f("danmaku_opacity", "弹幕默认不透明度（%）", "number", 90, "comment", public=True, min=10, max=100),
+    _f("danmaku_font_size", "弹幕默认字号（px）", "number", 18, "comment", public=True, min=12, max=32,
+       description="建议 16-20，太大容易挡画面"),
+    _f("danmaku_opacity", "弹幕默认不透明度（%）", "number", 85, "comment", public=True, min=10, max=100),
     _f("danmaku_speed", "弹幕滚动速度（秒）", "number", 8, "comment", public=True, min=4, max=20),
     # --------------------------------------------------------------- 社区
     _f("notify_reply", "回复时通知", "boolean", True, "community"),
@@ -157,3 +165,114 @@ SETTINGS: list[dict] = [
 
 SETTING_MAP: dict[str, dict] = {item["key"]: item for item in SETTINGS}
 PUBLIC_KEYS: list[str] = [item["key"] for item in SETTINGS if item.get("public")]
+
+
+# ---------------------------------------------------------------------------
+# 转码 / 邮件 / 第三方登录 / 会员 / 直播 / 基础设施
+# ---------------------------------------------------------------------------
+_EXTRA: list[dict] = [
+    # ------------------------------------------------------------- 转码
+    _f("transcode_enabled", "上传后自动转码", "boolean", True, "transcode",
+       description="关闭后只保存原文件，不生成多清晰度"),
+    _f("transcode_hls", "生成 HLS 分片", "boolean", True, "transcode"),
+    _f("transcode_keep_original", "保留原始视频文件", "boolean", True, "transcode"),
+    _f("transcode_qualities", "生成的清晰度", "json", ["360p", "480p", "720p"], "transcode",
+       description="可选 360p / 480p / 720p，源分辨率不足时自动跳过"),
+    # ------------------------------------------------------------- 邮件
+    _f("mail_enabled", "启用邮件服务", "boolean", False, "mail", public=True),
+    _f("smtp_host", "SMTP 服务器", "string", "", "mail", placeholder="smtp.qq.com"),
+    _f("smtp_port", "SMTP 端口", "number", 465, "mail", min=1, max=65535),
+    _f("smtp_ssl", "使用 SSL（465）", "boolean", True, "mail"),
+    _f("smtp_starttls", "使用 STARTTLS（587）", "boolean", True, "mail"),
+    _f("smtp_user", "SMTP 用户名", "string", "", "mail"),
+    _f("smtp_password", "SMTP 密码 / 授权码", "password", "", "mail", secret=True),
+    _f("smtp_from", "发件人地址", "string", "", "mail"),
+    _f("mail_from_name", "发件人显示名称", "string", "", "mail"),
+    _f("mail_reply_to", "回复地址", "string", "", "mail"),
+    _f("mail_allow_insecure_tls", "忽略 TLS 证书校验", "boolean", False, "mail"),
+    _f("mail_throttle_seconds", "同一收件人发信间隔（秒）", "number", 60, "mail", min=0, max=86400),
+    _f("mail_code_interval_seconds", "验证码重发间隔（秒）", "number", 60, "mail", min=10, max=3600),
+    _f("mail_register_verify", "注册需要邮箱验证码", "boolean", False, "mail", public=True),
+    _f("mail_reset_enabled", "允许邮箱找回密码", "boolean", True, "mail", public=True),
+    _f("notify_mail_reply", "回复 / 评论邮件通知", "boolean", True, "mail"),
+    _f("notify_mail_like", "点赞邮件通知", "boolean", False, "mail"),
+    _f("notify_mail_coin", "投币邮件通知", "boolean", True, "mail"),
+    _f("notify_mail_order", "订单状态邮件通知", "boolean", True, "mail"),
+    _f("notify_mail_system", "系统通知邮件", "boolean", True, "mail"),
+    # -------------------------------------------------------- 第三方登录
+    _f("oauth_enabled", "启用第三方登录", "boolean", True, "oauth", public=True),
+    _f("oauth_auto_register", "允许自动注册", "boolean", True, "oauth"),
+    _f("oauth_allow_bind", "允许已登录用户绑定", "boolean", True, "oauth"),
+    _f("oauth_bind_by_email", "按邮箱自动绑定已有账号", "boolean", True, "oauth"),
+    _f("oauth_show_on_login", "登录页显示第三方按钮", "boolean", True, "oauth", public=True),
+    _f("oauth_default_role", "自动注册用户角色", "select", "user", "oauth",
+       options=[{"value": "user", "label": "普通用户"}, {"value": "admin", "label": "管理员"}]),
+    _f("oauth_redirect_base", "回调地址前缀", "string", "", "oauth",
+       description="留空则使用站点地址，例如 https://v.example.com"),
+    _f("oauth_github_enabled", "启用 GitHub 登录", "boolean", False, "oauth", public=True),
+    _f("oauth_github_client_id", "GitHub Client ID", "string", "", "oauth"),
+    _f("oauth_github_client_secret", "GitHub Client Secret", "password", "", "oauth", secret=True),
+    _f("oauth_github_authorize_url", "GitHub 授权地址", "string", "https://github.com/login/oauth/authorize", "oauth"),
+    _f("oauth_github_token_url", "GitHub 令牌地址", "string", "https://github.com/login/oauth/access_token", "oauth"),
+    _f("oauth_github_userinfo_url", "GitHub 用户信息地址", "string", "https://api.github.com/user", "oauth"),
+    _f("oauth_github_scope", "GitHub Scope", "string", "read:user user:email", "oauth"),
+    _f("oauth_gitee_enabled", "启用 Gitee 登录", "boolean", False, "oauth", public=True),
+    _f("oauth_gitee_client_id", "Gitee Client ID", "string", "", "oauth"),
+    _f("oauth_gitee_client_secret", "Gitee Client Secret", "password", "", "oauth", secret=True),
+    _f("oauth_gitee_authorize_url", "Gitee 授权地址", "string", "https://gitee.com/oauth/authorize", "oauth"),
+    _f("oauth_gitee_token_url", "Gitee 令牌地址", "string", "https://gitee.com/oauth/token", "oauth"),
+    _f("oauth_gitee_userinfo_url", "Gitee 用户信息地址", "string", "https://gitee.com/api/v5/user", "oauth"),
+    _f("oauth_gitee_scope", "Gitee Scope", "string", "user_info", "oauth"),
+    _f("oauth_google_enabled", "启用 Google 登录", "boolean", False, "oauth", public=True),
+    _f("oauth_google_client_id", "Google Client ID", "string", "", "oauth"),
+    _f("oauth_google_client_secret", "Google Client Secret", "password", "", "oauth", secret=True),
+    _f("oauth_google_authorize_url", "Google 授权地址", "string",
+       "https://accounts.google.com/o/oauth2/v2/auth", "oauth"),
+    _f("oauth_google_token_url", "Google 令牌地址", "string", "https://oauth2.googleapis.com/token", "oauth"),
+    _f("oauth_google_userinfo_url", "Google 用户信息地址", "string",
+       "https://www.googleapis.com/oauth2/v3/userinfo", "oauth"),
+    _f("oauth_google_scope", "Google Scope", "string", "openid email profile", "oauth"),
+    _f("oauth_custom_enabled", "启用自定义 OAuth2", "boolean", False, "oauth", public=True),
+    _f("oauth_custom_client_id", "自定义 Client ID", "string", "", "oauth"),
+    _f("oauth_custom_client_secret", "自定义 Client Secret", "password", "", "oauth", secret=True),
+    _f("oauth_custom_authorize_url", "自定义授权地址", "string", "", "oauth"),
+    _f("oauth_custom_token_url", "自定义令牌地址", "string", "", "oauth"),
+    _f("oauth_custom_userinfo_url", "自定义用户信息地址", "string", "", "oauth"),
+    _f("oauth_custom_scope", "自定义 Scope", "string", "user", "oauth"),
+    # ---------------------------------------------------------- 会员与充电
+    _f("membership_enabled", "开启会员", "boolean", True, "member", public=True),
+    _f("membership_badge_text", "会员标识文字", "string", "大会员", "member", public=True),
+    _f("membership_note", "会员权益说明", "text",
+       "开通会员可获得专属标识、上传更大体积的视频、直播开播权限等。", "member", public=True),
+    _f("recharge_enabled", "开启硬币充值", "boolean", True, "member", public=True),
+    _f("coins_per_yuan", "每 1 元兑换硬币数", "number", 100, "member", public=True, min=1, max=10000),
+    _f("charge_enabled", "开启充电（给 UP 主投币）", "boolean", True, "member", public=True),
+    _f("charge_ratio", "充电兑换比例（多少硬币 = 1 元）", "number", 100, "member", public=True, min=1, max=10000),
+    _f("creator_share_percent", "创作者分成（%）", "number", 70, "member", min=0, max=100),
+    _f("pay_methods", "可用支付方式", "json",
+       [{"value": "manual", "label": "人工审核 / 转账"}, {"value": "alipay", "label": "支付宝"},
+        {"value": "wxpay", "label": "微信支付"}], "member", public=True),
+    _f("pay_manual_note", "人工支付说明", "text",
+       "下单后请联系管理员并提供订单号，管理员确认收款后订单会变为已支付。", "member", public=True),
+    # ------------------------------------------------------------- 直播
+    _f("live_enabled", "开启直播", "boolean", True, "live", public=True),
+    _f("live_need_approval", "开播需要管理员开通权限", "boolean", True, "live"),
+    _f("live_member_only", "仅会员可开播", "boolean", False, "live"),
+    _f("live_push_base", "推流地址前缀", "string", "rtmp://localhost/live", "live",
+       description="配合 nginx-rtmp / SRS 使用，主播用「前缀/流密钥」推流"),
+    _f("live_play_base", "播放地址前缀", "string", "http://localhost:8080/live", "live",
+       description="HLS 播放地址前缀，例如 http://你的域名/live"),
+    _f("live_notice", "直播页提示", "text",
+       "开播前请先申请直播权限，推流地址在直播间设置里可以看到。", "live", public=True),
+    _f("live_chat_interval", "聊天最小间隔（秒）", "number", 2, "live", min=0, max=600),
+    _f("live_chat_max_length", "聊天内容长度上限", "number", 100, "live", public=True, min=10, max=500),
+    _f("live_max_hours", "单场直播最长时长（小时）", "number", 12, "live", min=1, max=72),
+    # -------------------------------------------------------- 缓存与分布式
+    _f("cache_home_seconds", "首页缓存时间（秒）", "number", 10, "infra", min=0, max=600),
+    _f("cache_meta_seconds", "元数据缓存时间（秒）", "number", 60, "infra", min=0, max=3600),
+    _f("online_window_seconds", "在线人数统计窗口（秒）", "number", 300, "infra", min=60, max=3600),
+]
+
+SETTINGS.extend(_EXTRA)
+SETTING_MAP = {item["key"]: item for item in SETTINGS}
+PUBLIC_KEYS = [item["key"] for item in SETTINGS if item.get("public")]

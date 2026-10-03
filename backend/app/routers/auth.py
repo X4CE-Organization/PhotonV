@@ -10,10 +10,10 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import models, settings_store as site
+from .. import mailer, models, redis_client as redis, settings_store as site
 from ..database import get_db
 from ..security import create_token, current_user, hash_password, require_user, verify_password
-from ..utils import audit, fail, iso, user_me, now
+from ..utils import audit, fail, iso, notify, user_me, now
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -93,6 +93,16 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
         if db.scalar(select(models.User.id).where(models.User.email == email)):
             raise fail(409, "该邮箱已被注册")
 
+    need_verify = site.get_bool("mail_register_verify", False) and site.get_bool("mail_enabled", False)
+    if need_verify:
+        if not email:
+            raise fail(400, "请填写邮箱")
+        code = str(payload.get("email_code") or "").strip()
+        if not code:
+            raise fail(400, "请填写邮箱验证码")
+        if not mailer.consume_code(db, email, "verify", code):
+            raise fail(400, "邮箱验证码不正确或已过期")
+
     if username_taken(db, username):
         raise fail(409, "该用户名已被注册")
 
@@ -105,6 +115,7 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
         display_name=username,
         coins=site.get_int("coins_on_register", 5),
         is_private=site.get_bool("default_private", False),
+        email_verified=bool(email),
         last_login_at=now(),
         last_login_ip=request.client.host if request.client else "",
     )
@@ -117,6 +128,13 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
     db.commit()
 
     audit(db, request, user, "user.register", "user", user.id, username)
+    mailer.send(
+        db, user.email or "", f"[{site.get_str('site_name', 'PhotonV')}] 欢迎加入",
+        f"欢迎加入 {site.get_str('site_name', 'PhotonV')}",
+        intro="你的账号已经创建成功，快去发布第一条视频吧！",
+        button={"label": "进入首页", "url": site.get_str("site_url", "")},
+        category="system", user_id=user.id, skip_throttle=True,
+    )
     token = create_token(user, site.get_int("session_days", 14))
     set_cookie(response, token, site.get_int("session_days", 14))
     return {"token": token, "user": user_me(user)}
@@ -133,6 +151,8 @@ def login(payload: dict, request: Request, response: Response, db: Session = Dep
     lock_key = f"login:{username}:{ip}"
     limit = site.get_int("login_fail_limit", 10)
     if limit > 0:
+        if (redis.counter_get(lock_key) or 0) >= limit:
+            raise fail(429, "登录失败次数过多，请稍后再试")
         row = db.get(models.RateLimit, lock_key)
         if row and row.expires_at and row.expires_at > now() and row.count >= limit:
             raise fail(429, "登录失败次数过多，请稍后再试")
@@ -146,15 +166,17 @@ def login(payload: dict, request: Request, response: Response, db: Session = Dep
             )
         )
         if limit > 0:
-            row = db.get(models.RateLimit, lock_key)
             minutes = site.get_int("login_lock_minutes", 15)
-            if row and row.expires_at and row.expires_at > now():
-                row.count += 1
-                row.expires_at = now() + timedelta(minutes=minutes)
-            else:
-                db.merge(
-                    models.RateLimit(key=lock_key, count=1, expires_at=now() + timedelta(minutes=minutes))
-                )
+            counted = redis.counter_incr(lock_key, minutes * 60)
+            if counted is None:
+                row = db.get(models.RateLimit, lock_key)
+                if row and row.expires_at and row.expires_at > now():
+                    row.count += 1
+                    row.expires_at = now() + timedelta(minutes=minutes)
+                else:
+                    db.merge(
+                        models.RateLimit(key=lock_key, count=1, expires_at=now() + timedelta(minutes=minutes))
+                    )
         db.commit()
         raise fail(401, "用户名或密码错误")
     if user.is_banned:
@@ -162,9 +184,21 @@ def login(payload: dict, request: Request, response: Response, db: Session = Dep
 
     days = site.get_int("session_days", 14)
     if limit > 0:
+        redis.counter_reset(lock_key)
         row = db.get(models.RateLimit, lock_key)
         if row:
             db.delete(row)
+
+    # 每日登录赠送硬币
+    bonus = site.get_int("coins_per_day", 0)
+    today = now().strftime("%Y-%m-%d")
+    if bonus > 0 and user.last_bonus_date != today:
+        user.coins += bonus
+        user.last_bonus_date = today
+        notify(
+            db, user.id, "system", f"每日登录奖励 +{bonus} 硬币",
+            "感谢你每天来看看，继续创作吧！",
+        )
     user.last_login_at = now()
     user.last_login_ip = ip
     db.add(
