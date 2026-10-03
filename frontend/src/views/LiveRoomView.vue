@@ -241,7 +241,7 @@ onUnmounted(() => {
           :class="studioTab === 'browser' ? 'bg-[var(--pv-accent)] text-white' : 'bg-[var(--pv-surface-2)] muted'"
           @click="studioTab = 'browser'"
         >
-          <Icon name="tv" :size="14" class="mr-1 inline" />浏览器开播
+          <Icon name="tv" :size="14" class="mr-1 inline" />网页开播
         </button>
         <button
           v-if="studio?.allowRtmp !== false"

@@ -51,29 +51,14 @@ const kpis = computed(() => {
 const todos = computed(() => {
   if (!data.value) return [];
   return [
-    {
-      label: '待审核投稿',
-      value: data.value.videos.pending,
-      to: '/admin/videos',
-      icon: 'film',
-      hint: '通过或驳回后作者会收到通知',
-    },
-    {
-      label: '待处理举报',
-      value: data.value.reports.pending,
-      to: '/admin/reports',
-      icon: 'flag',
-      hint: '驳回举报或删除违规内容',
-    },
-    {
-      label: '待确认订单',
-      value: data.value.orders.pending,
-      to: '/admin/orders',
-      icon: 'card',
-      hint: '确认收款后会员会立即生效',
-    },
+    { label: '待审核投稿', value: data.value.videos.pending, to: '/admin/videos', icon: 'film' },
+    { label: '待处理举报', value: data.value.reports.pending, to: '/admin/reports', icon: 'flag' },
+    { label: '待确认订单', value: data.value.orders.pending, to: '/admin/orders', icon: 'card' },
   ];
 });
+
+/** 没有待办时不占版面，避免一屏全是 0 */
+const pendingTodos = computed(() => todos.value.filter((item) => item.value > 0));
 
 const maxTrend = computed(() => Math.max(1, ...(data.value?.trend || []).map((item: any) => item.count)));
 
@@ -118,31 +103,22 @@ onMounted(async () => {
 <template>
   <p v-if="loading" class="py-20 text-center text-sm muted">加载中…</p>
   <div v-else-if="data" class="space-y-4">
-    <!-- 待办 -->
-    <section class="grid gap-2 sm:grid-cols-3">
+    <!-- 待办：只有真的有事才出现 -->
+    <section v-if="pendingTodos.length" class="grid gap-2 sm:grid-cols-3">
       <RouterLink
-        v-for="item in todos"
+        v-for="item in pendingTodos"
         :key="item.label"
         :to="item.to"
-        class="pv-console-tile group transition hover:-translate-y-0.5"
-        :class="item.value > 0 ? '!border-[var(--pv-accent)]/40' : ''"
+        class="pv-console-tile flex items-center gap-3 border-[var(--pv-accent)]/40 transition hover:-translate-y-0.5"
       >
-        <div class="flex items-start gap-3">
-          <span
-            class="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
-            :class="item.value > 0 ? 'bg-[var(--pv-accent)]/15 text-[var(--pv-accent)]' : 'bg-[var(--pv-surface-2)] muted'"
-          >
-            <Icon :name="item.icon" :size="17" />
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="text-xs muted">{{ item.label }}</p>
-            <p class="pv-console-kpi">{{ item.value }}</p>
-            <p class="mt-0.5 text-[11px] muted">{{ item.hint }}</p>
-          </div>
-          <span v-if="item.value > 0" class="mt-1 rounded-full bg-[var(--pv-accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
-            待办
-          </span>
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--pv-accent)]/15 text-[var(--pv-accent)]">
+          <Icon :name="item.icon" :size="17" />
+        </span>
+        <div class="min-w-0">
+          <p class="text-xs muted">{{ item.label }}</p>
+          <p class="pv-console-kpi">{{ item.value }}</p>
         </div>
+        <span class="ml-auto rounded-full bg-[var(--pv-accent)] px-2 py-0.5 text-[10px] font-semibold text-white">待办</span>
       </RouterLink>
     </section>
 
@@ -171,7 +147,7 @@ onMounted(async () => {
         <div class="mt-3 space-y-1.5">
           <div v-for="item in data.trend" :key="item.day" class="flex items-center gap-2 text-[11px]">
             <span class="w-12 shrink-0 font-mono muted">{{ item.day.slice(5) }}</span>
-            <span class="pv-console-bar flex-1"><span :style="{ width: `${(item.count / maxTrend) * 100}%` }"></span></span>
+            <span class="pv-console-bar-track flex-1"><span :style="{ width: `${(item.count / maxTrend) * 100}%` }"></span></span>
             <span class="w-6 shrink-0 text-right font-medium">{{ item.count }}</span>
           </div>
           <p v-if="!data.trend.length" class="py-6 text-center text-xs muted">暂无投稿数据</p>
@@ -205,17 +181,14 @@ onMounted(async () => {
       </section>
     </div>
 
-    <!-- 待审核视频 -->
-    <section>
+    <!-- 待审核视频：有内容才占版面 -->
+    <section v-if="data.pendingVideos.length">
       <div class="mb-2 flex items-center gap-2">
         <h2 class="text-sm font-semibold">待审核投稿</h2>
         <span class="chip !py-0 text-[10px]">{{ data.videos.pending }}</span>
         <RouterLink to="/admin/videos" class="ml-auto text-xs text-[var(--pv-accent)]">全部 →</RouterLink>
       </div>
-      <p v-if="!data.pendingVideos.length" class="pv-console-tile py-10 text-center text-sm muted">
-        没有待审核的投稿，很干净。
-      </p>
-      <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         <VideoCard v-for="video in data.pendingVideos" :key="video.id" :video="video" />
       </div>
     </section>

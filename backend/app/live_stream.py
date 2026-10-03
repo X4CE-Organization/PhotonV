@@ -81,7 +81,7 @@ def urls_for(room: models.LiveRoom) -> dict:
         # OBS：服务器 + 串流密钥
         "rtmpServer": f"{rtmp}/{PATH_PREFIX.rstrip('/')}" if rtmp else "",
         "rtmpUrl": f"{rtmp}/{path}" if rtmp and path else "",
-        # 浏览器开播
+        # 网页开播
         "whipUrl": f"{whip_base()}/{path}/whip" if whip_base() and path else "",
         # 播放
         "whepUrl": f"{whep_base()}/{path}/whep" if whep_base() and path else "",
