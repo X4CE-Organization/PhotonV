@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import { api } from '../api';
 import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
-import { formatTime } from '../utils';
+import { formatTime, fromNow } from '../utils';
 import Icon from '../components/Icon.vue';
 
 const store = useAppStore();
@@ -28,6 +28,18 @@ const bindings = ref<{ bindings: any[]; providers: any[] } | null>(null);
 const phoneInfo = ref<any>(null);
 const phoneForm = ref({ phone: '', code: '' });
 const phoneCooldown = ref(0);
+const loginLogs = ref<any[]>([]);
+const loginIps = ref(0);
+
+async function loadLoginLogs() {
+  try {
+    const data = await api.get<any>('/api/auth/login-logs?limit=30');
+    loginLogs.value = data.items || [];
+    loginIps.value = data.distinctIps || 0;
+  } catch {
+    loginLogs.value = [];
+  }
+}
 
 async function loadPhone() {
   try {
@@ -168,6 +180,7 @@ onMounted(() => {
   fill();
   void loadExtras();
   void loadPhone();
+  void loadLoginLogs();
 });
 </script>
 
@@ -338,6 +351,29 @@ onMounted(() => {
           <button class="btn-primary text-xs" @click="bindPhone">绑定手机号</button>
         </div>
       </template>
+    </section>
+
+    <section class="card p-4 text-sm">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="clock" :size="17" />登录记录</h2>
+      <p class="mt-2 text-xs muted">
+        最近 {{ loginLogs.length }} 次登录，共出现过 {{ loginIps }} 个不同 IP。
+        发现不是自己的登录时，请立刻修改密码。
+      </p>
+      <div v-if="loginLogs.length" class="mt-3 space-y-1.5">
+        <div
+          v-for="item in loginLogs"
+          :key="item.id"
+          class="flex flex-wrap items-center gap-3 rounded-xl bg-[var(--pv-surface-2)] px-3 py-2 text-xs"
+        >
+          <span class="font-mono">{{ item.ip || '未知 IP' }}</span>
+          <span class="chip !py-0 text-[10px]" :class="item.success ? '' : '!text-rose-500'">
+            {{ item.success ? '成功' : '失败' }}
+          </span>
+          <span class="min-w-0 flex-1 truncate muted">{{ item.userAgent || '未知设备' }}</span>
+          <span class="muted">{{ fromNow(item.createdAt) }}</span>
+        </div>
+      </div>
+      <p v-else class="mt-3 text-xs muted">暂时没有登录记录。</p>
     </section>
   </div>
 </template>

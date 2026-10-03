@@ -294,6 +294,7 @@ def review_video(
         video.status = "published"
         video.published_at = video.published_at or now()
         video.reject_reason = ""
+        video.scheduled_at = None
         if author and not was_published:
             author.video_count += 1
     else:

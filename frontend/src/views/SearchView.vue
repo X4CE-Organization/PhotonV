@@ -5,6 +5,7 @@ import { api, query } from '../api';
 import { formatNumber, initials } from '../utils';
 import VideoCard from '../components/VideoCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
+import Icon from '../components/Icon.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -16,6 +17,21 @@ const total = ref(0);
 const page = ref(1);
 const size = ref(24);
 const loading = ref(false);
+const hot = ref<any[]>([]);
+
+async function loadHot() {
+  try {
+    const data = await api.get<any>('/api/search/hot');
+    hot.value = data.items || [];
+  } catch {
+    hot.value = [];
+  }
+}
+
+function searchFor(word: string) {
+  keyword.value = word;
+  submit();
+}
 
 async function load() {
   if (!keyword.value.trim()) return;
@@ -45,7 +61,10 @@ watch(() => route.query.q, (value) => {
   void load();
 });
 
-onMounted(load);
+onMounted(() => {
+  void load();
+  void loadHot();
+});
 </script>
 
 <template>
@@ -54,6 +73,22 @@ onMounted(load);
       <input v-model="keyword" class="input flex-1" placeholder="搜索视频、用户" />
       <button class="btn-primary">搜索</button>
     </form>
+
+    <div v-if="hot.length" class="card p-3">
+      <div class="mb-2 flex items-center gap-2 text-xs text-slate-400">
+        <Icon name="flame" :size="14" />热搜
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="(item, index) in hot"
+          :key="item.keyword"
+          class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-600 hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-300"
+          @click="searchFor(item.keyword)"
+        >
+          <span class="mr-1 text-slate-400">{{ index + 1 }}</span>{{ item.keyword }}
+        </button>
+      </div>
+    </div>
 
     <div class="flex gap-4 text-sm">
       <button :class="tab === 'video' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'video'; load()">视频</button>

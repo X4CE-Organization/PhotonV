@@ -1,6 +1,7 @@
 """视频投稿、列表、详情与相关推荐。"""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -17,6 +18,7 @@ from ..utils import (
     notify,
     pagination,
     rate_limit,
+    publish_due_videos,
     tag_rows,
     video_brief,
     viewer_flags,
@@ -49,6 +51,27 @@ def apply_tags(db: Session, video: models.Video, names: list[str]) -> None:
     db.commit()
 
 
+def parse_scheduled_at(raw: object) -> Optional[datetime]:
+    """解析投稿页传来的定时发布时间，非法或已经过期返回 None。"""
+    if not raw or not isinstance(raw, str):
+        return None
+    text = raw.strip().replace("T", " ")
+    if text.endswith("Z"):
+        text = text[:-1]
+    text = text.split(".")[0]
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M"):
+        try:
+            moment = datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+        if moment <= now():
+            return None
+        if (moment - now()).days > 30:
+            return None
+        return moment
+    return None
+
+
 @router.get("")
 def list_videos(
     page: int = Query(1),
@@ -61,6 +84,7 @@ def list_videos(
     db: Session = Depends(get_db),
     viewer: Optional[models.User] = Depends(current_user),
 ):
+    publish_due_videos(db)
     _, size, limit, offset = pagination(page, size, site.get_int("video_page_size", 24), 60)
     query = select(models.Video).where(
         models.Video.status == "published", models.Video.deleted_at.is_(None)
@@ -179,9 +203,6 @@ def create_video(
         raise fail(403, "本站已关闭投稿")
     if user.level < site.get_int("upload_min_level", 0):
         raise fail(403, f"投稿需要达到 Lv{site.get_int('upload_min_level', 0)}")
-    interval = site.get_int("video_upload_interval", 60)
-    if not rate_limit(f"upload:{user.id}", interval):
-        raise fail(429, f"投稿过于频繁，请 {interval} 秒后再试")
 
     title = str(payload.get("title") or "").strip()
     if len(title) < 2:
@@ -197,7 +218,22 @@ def create_video(
         raise fail(400, "本站不允许填写外部视频直链")
     check_banned_words(title, description)
 
+    # 限流放在校验之后：表单填错不用白等一个投稿冷却
+    interval = site.get_int("video_upload_interval", 60)
+    if not rate_limit(f"upload:{user.id}", interval):
+        raise fail(429, f"投稿过于频繁，请 {interval} 秒后再试")
+
+    scheduled_at = parse_scheduled_at(payload.get("scheduled_at"))
+    if scheduled_at and not site.get_bool("scheduled_publish_enabled", True):
+        raise fail(400, "本站已关闭定时发布")
+
     needs_review = site.get_bool("video_need_review", True)
+    status = "pending" if needs_review else "published"
+    published_at = None if needs_review else now()
+    if scheduled_at:
+        # 定时投稿先进入待发布状态，到点由 publish_due_videos 自动公开
+        status = "pending"
+        published_at = None
     video = models.Video(
         author_id=user.id,
         title=title,
@@ -210,18 +246,19 @@ def create_video(
         width=int(payload.get("width") or 0),
         height=int(payload.get("height") or 0),
         category_id=int(payload["category_id"]) if payload.get("category_id") else None,
-        status="pending" if needs_review else "published",
+        status=status,
+        scheduled_at=scheduled_at,
         allow_comment=bool(payload.get("allow_comment", True)),
         allow_danmaku=bool(payload.get("allow_danmaku", True)),
         allow_download=bool(payload.get("allow_download", site.get_bool("allow_download", True))),
-        published_at=None if needs_review else now(),
+        published_at=published_at,
     )
     db.add(video)
     db.commit()
     db.refresh(video)
     if isinstance(payload.get("tags"), list):
         apply_tags(db, video, payload["tags"])
-    if not needs_review:
+    if not needs_review and not scheduled_at:
         user.video_count += 1
         db.commit()
     if site.get_bool("transcode_enabled", True) and source:

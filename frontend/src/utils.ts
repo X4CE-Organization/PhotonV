@@ -44,3 +44,24 @@ export function initials(name?: string | null): string {
   const text = (name || '?').trim();
   return text.slice(0, 1).toUpperCase();
 }
+
+const EMOJI_TOKEN = /\[emoji:([A-Za-z0-9_\-.~:/]+)\]/g;
+
+export function escapeHtml(text: string): string {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * 把普通文本渲染成安全 HTML：转义 + @提及高亮 + 表情图片。
+ * 只允许 [emoji:...] 里的地址变成图片，其他标签一律当纯文本处理。
+ */
+export function renderRich(content: string): string {
+  const safe = escapeHtml(content);
+  return safe
+    .replace(EMOJI_TOKEN, (_match, url: string) => `<img class="pv-emoji" src="${url}" alt="表情" />`)
+    .replace(/(^|\s)@([A-Za-z0-9_\u4e00-\u9fa5-]{1,32})/g, '$1<span class="pv-mention">@$2</span>');
+}

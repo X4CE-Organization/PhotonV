@@ -4,8 +4,9 @@ import { RouterLink, useRoute } from 'vue-router';
 import { api } from '../api';
 import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
-import { fromNow, initials } from '../utils';
+import { fromNow, initials, renderRich } from '../utils';
 import Icon from '../components/Icon.vue';
+import EmojiPicker from '../components/EmojiPicker.vue';
 
 const store = useAppStore();
 const route = useRoute();
@@ -13,6 +14,12 @@ const conversations = ref<any[]>([]);
 const active = ref<any>(null);
 const messages = ref<any[]>([]);
 const draft = ref('');
+const showEmoji = ref(false);
+
+function insertEmoji(token: string) {
+  draft.value = `${draft.value}${draft.value && !draft.value.endsWith(' ') ? ' ' : ''}${token} `;
+  showEmoji.value = false;
+}
 const loading = ref(true);
 const box = ref<HTMLElement | null>(null);
 let socket: WebSocket | null = null;
@@ -182,12 +189,16 @@ onUnmounted(() => socket?.close());
               class="max-w-[70%] rounded-2xl px-3.5 py-2 text-sm"
               :class="item.mine ? 'bg-gradient-to-br from-[#6d4aff] to-[#8b5cf6] text-white' : 'bg-[var(--pv-surface-2)]'"
             >
-              <p class="whitespace-pre-wrap break-words">{{ item.content }}</p>
+              <p class="whitespace-pre-wrap break-words" v-html="renderRich(item.content)" />
               <div class="mt-1 text-[10px] opacity-70">{{ fromNow(item.createdAt) }}</div>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-2 border-t border-[var(--pv-border)] p-3">
+        <div class="relative flex items-center gap-2 border-t border-[var(--pv-border)] p-3">
+          <button class="btn-ghost !px-2" title="表情" @click="showEmoji = !showEmoji"><Icon name="sparkles" :size="16" /></button>
+          <div v-if="showEmoji" class="absolute bottom-full left-3 z-30 mb-2">
+            <EmojiPicker @pick="insertEmoji" />
+          </div>
           <input v-model="draft" class="input flex-1" placeholder="输入消息，回车发送" @keyup.enter="send" />
           <button class="btn-primary !px-3" :disabled="!draft.trim()" @click="send"><Icon name="send" :size="16" /></button>
         </div>

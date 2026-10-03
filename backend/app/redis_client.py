@@ -157,6 +157,25 @@ def counter_reset(key: str) -> None:
         pass
 
 
+def top_counters(prefix: str, limit: int = 10) -> list[dict[str, Any]]:
+    """取出计数最高的若干个 key（用于热搜词）。没启用 Redis 时返回空列表。"""
+    redis = client()
+    if not redis:
+        return []
+    try:
+        rows: list[dict[str, Any]] = []
+        for key in redis.scan_iter(match=f"photonv:cnt:{prefix}*", count=500):
+            try:
+                value = int(redis.get(key) or 0)
+            except (TypeError, ValueError):
+                continue
+            rows.append({"keyword": key.split(prefix, 1)[-1], "count": value, "source": "search"})
+        rows.sort(key=lambda item: item["count"], reverse=True)
+        return rows[: max(1, limit)]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 # ------------------------------------------------------------ 在线人数
 
 

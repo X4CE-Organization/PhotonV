@@ -315,6 +315,39 @@ def update_profile(payload: dict, request: Request, user: models.User = Depends(
     return {"ok": True, "user": user_me(user)}
 
 
+@router.get("/login-logs")
+def my_login_logs(
+    limit: int = 30,
+    user: models.User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    """我的登录记录：用来发现异地 / 异常登录。"""
+    size = max(1, min(100, limit))
+    rows = db.scalars(
+        select(models.LoginLog)
+        .where(models.LoginLog.user_id == user.id)
+        .order_by(models.LoginLog.id.desc())
+        .limit(size)
+    ).all()
+    items = [
+        {
+            "id": row.id,
+            "ip": row.ip,
+            "userAgent": row.user_agent,
+            "success": bool(row.success),
+            "createdAt": iso(row.created_at),
+        }
+        for row in rows
+    ]
+    ips = {item["ip"] for item in items if item["ip"]}
+    return {
+        "items": items,
+        # 出现过多个不同 IP 时前端给出提醒
+        "distinctIps": len(ips),
+        "currentIp": "",
+    }
+
+
 @router.put("/password")
 def change_password(payload: dict, request: Request, user: models.User = Depends(require_user), db: Session = Depends(get_db)):
     old = str(payload.get("old_password") or "")

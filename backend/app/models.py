@@ -9,6 +9,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -165,6 +166,9 @@ class Video(Base):
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # 定时发布：到点后由后台自动把 pending 变为 published
+    scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # 转码与多清晰度
     transcode_status: Mapped[str] = mapped_column(String(16), default="pending")
@@ -327,6 +331,37 @@ class PlaylistItem(Base):
         BigInteger, ForeignKey("videos.id", ondelete="CASCADE"), primary_key=True
     )
     order_no: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class VideoNote(Base):
+    """带时间点的视频笔记（类似视频内的个人笔记）。"""
+
+    __tablename__ = "video_notes"
+    __table_args__ = (Index("idx_video_notes_video", "video_id", "time_seconds"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    video_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("videos.id", ondelete="CASCADE"))
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    time_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+    content: Mapped[str] = mapped_column(String(1000), default="")
+    is_public: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class Emoji(Base):
+    """自定义表情包：用户上传或从别处收藏，可在评论 / 私信里发送。"""
+
+    __tablename__ = "emojis"
+    __table_args__ = (Index("idx_emojis_owner", "owner_id", "id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    owner_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(32), default="")
+    url: Mapped[str] = mapped_column(String(500))
+    origin_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    use_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 

@@ -27,6 +27,7 @@ const navItems = computed(() => [
   { to: '/rank', label: '排行榜', icon: 'flame' },
   { to: '/following', label: '关注', icon: 'users', auth: true },
   { to: '/favorites', label: '收藏', icon: 'bookmark', auth: true },
+  { to: '/playlists', label: '合集', icon: 'list', auth: true },
   { to: '/history', label: '历史', icon: 'history', auth: true },
   { to: '/messages', label: '私信', icon: 'message', auth: true, badge: dmUnread },
   { to: '/membership', label: '会员', icon: 'crown' },

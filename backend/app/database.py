@@ -51,6 +51,7 @@ COLUMN_MIGRATIONS: list[tuple[str, str]] = [
     ("videos", "transcode_status VARCHAR(16) NOT NULL DEFAULT 'pending'"),
     ("videos", "transcode_error VARCHAR(500) NOT NULL DEFAULT ''"),
     ("videos", "hls_path VARCHAR(500) NOT NULL DEFAULT ''"),
+    ("videos", "scheduled_at TIMESTAMP"),
     ("orders", "trade_no VARCHAR(64) NOT NULL DEFAULT ''"),
     ("orders", "pay_payload TEXT NOT NULL DEFAULT ''"),
 ]

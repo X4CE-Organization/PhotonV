@@ -27,6 +27,7 @@ const form = ref({
   allow_comment: true,
   allow_danmaku: true,
   allow_download: true,
+  scheduled_at: '',
 });
 const myVideos = ref<any[]>([]);
 const statusFilter = ref('all');
@@ -237,6 +238,14 @@ onMounted(loadMine);
             <label class="flex items-center gap-2"><input v-model="form.allow_comment" type="checkbox" />允许评论</label>
             <label class="flex items-center gap-2"><input v-model="form.allow_danmaku" type="checkbox" />允许弹幕</label>
             <label class="flex items-center gap-2"><input v-model="form.allow_download" type="checkbox" />允许下载</label>
+          </div>
+
+          <div v-if="store.settings.scheduled_publish_enabled !== false">
+            <label class="label">定时发布（可选）</label>
+            <input v-model="form.scheduled_at" type="datetime-local" class="input sm:max-w-xs" />
+            <p class="mt-1 text-xs text-slate-400">
+              留空就按正常流程发布。填了时间的话，到点会自动公开，最多支持 30 天内。
+            </p>
           </div>
 
           <div class="flex justify-end">

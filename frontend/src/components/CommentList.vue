@@ -4,9 +4,10 @@ import { RouterLink } from 'vue-router';
 import { api, query } from '../api';
 import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
-import { fromNow, initials } from '../utils';
+import { fromNow, initials, renderRich } from '../utils';
 import Icon from './Icon.vue';
 import PaginationBar from './PaginationBar.vue';
+import EmojiPicker from './EmojiPicker.vue';
 
 const props = defineProps<{ videoId: number; allowComment: boolean }>();
 const store = useAppStore();
@@ -19,6 +20,12 @@ const draft = ref('');
 const replyTo = ref<any>(null);
 const sending = ref(false);
 const loading = ref(false);
+const showEmoji = ref(false);
+
+function insertEmoji(token: string) {
+  draft.value = `${draft.value}${draft.value && !draft.value.endsWith(' ') ? ' ' : ''}${token} `;
+  showEmoji.value = false;
+}
 
 async function load() {
   loading.value = true;
@@ -114,6 +121,15 @@ onMounted(load);
         ></textarea>
         <button class="btn-primary" :disabled="sending || !draft.trim()" @click="submit">发布</button>
       </div>
+      <div class="relative mt-2">
+        <button class="btn-ghost text-xs" :disabled="!store.isLogin" @click="showEmoji = !showEmoji">
+          <Icon name="sparkles" :size="14" />表情
+        </button>
+        <div v-if="showEmoji" class="absolute bottom-full left-0 z-30 mb-2">
+          <EmojiPicker @pick="insertEmoji" />
+        </div>
+        <span class="ml-2 text-[11px] text-slate-400">输入 @用户名 可以提醒对方</span>
+      </div>
     </div>
     <p v-else class="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500 dark:bg-slate-800/60">UP 主已关闭该视频的评论。</p>
 
@@ -136,7 +152,7 @@ onMounted(load);
             <span v-if="item.isPinned" class="rounded bg-primary/10 px-1 text-primary">置顶</span>
             <span>{{ fromNow(item.createdAt) }}</span>
           </div>
-          <p class="mt-1 whitespace-pre-wrap break-words text-sm">{{ item.content }}</p>
+          <p class="mt-1 whitespace-pre-wrap break-words text-sm" v-html="renderRich(item.content)" />
           <div class="mt-1 flex items-center gap-3 text-xs text-slate-400">
             <button class="inline-flex items-center gap-1" :class="item.liked ? 'text-rose-500' : 'hover:text-rose-500'" @click="like(item)">
               <Icon name="heart" :size="13" />{{ item.likeCount }}

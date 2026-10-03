@@ -169,6 +169,20 @@ function toggleFullscreen() {
   else void element.requestFullscreen();
 }
 
+/** 供父组件使用的播放控制：读当前进度、跳到指定秒数。 */
+defineExpose({
+  position: () => current.value,
+  seekTo: (seconds: number) => {
+    const element = videoEl.value;
+    if (!element) return;
+    element.currentTime = Math.max(0, seconds);
+    shown.clear();
+    active.value = [];
+    busy.value = [];
+    void element.play().catch(() => undefined);
+  },
+});
+
 watch(
   () => props.video?.id,
   () => {

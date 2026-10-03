@@ -22,8 +22,6 @@ def create_report(
 ):
     if not site.get_bool("allow_report", True):
         raise fail(403, "本站已关闭举报功能")
-    if not rate_limit(f"report:{user.id}", 60):
-        raise fail(429, "举报提交过于频繁，请稍后再试")
 
     target_type = str(payload.get("target_type") or "")
     if target_type not in {"video", "comment", "user", "danmaku"}:
@@ -31,6 +29,9 @@ def create_report(
     target_id = int(payload.get("target_id") or 0)
     if not target_id:
         raise fail(400, "缺少举报对象")
+
+    if not rate_limit(f"report:{user.id}", 60):
+        raise fail(429, "举报提交过于频繁，请稍后再试")
 
     reasons = [item["value"] for item in (site.get_json("report_reasons", []) or [])]
     reason = str(payload.get("reason") or "other")

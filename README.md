@@ -4,9 +4,9 @@
 
 **一个开源、完整、开箱即用的微视频平台**
 
-投稿 · 弹幕 · 评论 · 投币 · 收藏夹 · 关注 · 分区 · 排行榜 · 消息 · 举报 · 管理后台 · 系统设置
+投稿 · 弹幕 · 评论 · 投币 · 收藏夹 · 合集 · 笔记 · 表情包 · 关注 · 分区 · 排行榜 · 消息 · 直播 · 会员 · 举报 · 管理后台 · 系统设置
 
-**当前版本：1.2.0**
+**当前版本：1.3.0**
 
 </div>
 
@@ -45,6 +45,14 @@
 | **评论** | 两级评论（回复自动归到主楼）、点赞、按最热 / 最新排序、UP 主可置顶、作者 / 管理员可删除 |
 | **互动** | 点赞、投币（每人最多 2 个）、收藏到指定收藏夹、稍后再看、分享（复制链接并计数） |
 | **收藏夹** | 多收藏夹、公开 / 私密、新建、重命名、删除（默认收藏夹不可删）、他人主页可看公开收藏 |
+| **合集 / 播放列表** | 把多个视频整理成一个合集按顺序连播：新建 / 编辑 / 删除、增删视频、拖拽排序（接口层支持 reorder）、公开或私有；视频页一键加入合集，UP 主主页展示公开合集 |
+| **视频笔记** | 边看边按时间点记笔记，点击时间戳可以跳回视频对应位置；每条笔记可单独设为公开或私密，个人中心可查看自己的全部笔记 |
+| **表情包** | 上传图片 / GIF 制作自己的表情，评论框与私信里一键插入；「热门」里可以收藏别人发的表情（类似偷表情），表情以图片形式渲染在评论和私信里 |
+| **@ 提及** | 评论里输入 `@用户名` 会高亮显示，并给被提到的人发一条通知 |
+| **定时发布** | 投稿时可以指定发布时间（30 天内），到点后后台自动公开并通知作者 |
+| **登录记录** | 个人设置里能看到最近 30 次登录的 IP、设备和时间，出现多个陌生 IP 时方便及时改密码 |
+| **热搜词** | 搜索页展示站内真实热搜榜（按搜索次数统计，没有数据时用热门标签补齐） |
+| **SEO** | 内置 `/sitemap.xml`（视频 / 分区 / 用户）、`/rss.xml` 订阅源、`/robots.txt`，方便被搜索引擎收录 |
 | **关注** | 关注 / 取关、粉丝与关注列表、关注流（只看关注的人的新投稿） |
 | **个人空间** | 头像、横幅、昵称、签名、等级与经验进度、投稿 / 粉丝 / 关注 / 总播放 / 获赞统计 |
 | **观看历史** | 记录观看进度，显示看到哪里、什么时候看的 |
@@ -314,6 +322,9 @@ PhotonV/
 | 缓存与分布式 | 首页缓存时间、元数据缓存时间、在线人数统计窗口 |
 | 短信 / 手机号 | 短信服务商（开发 / 阿里云 / 腾讯云 / 自定义）、AccessKey 与模板、验证码位数与有效期、发送间隔与每日上限、手机号登录开关、注册必填、必须绑定、前台脱敏 |
 | 支付渠道 | 在线支付总开关、支付完成跳转、轮询间隔；支付宝 AppId / 应用私钥 / 支付宝公钥 / 网关 / 签名算法 / 支付方式；微信支付商户号 / AppId / APIv3 密钥 / 证书序列号 / 商户私钥 / 下单地址 |
+| 视频与投稿 | 定时发布开关、合集开关、视频笔记开关与长度上限 |
+| 注册与登录 | 注册需要邮箱 / 注册需要手机号两个独立开关（都不勾就是都选填，没勾的那项用户之后可在个人设置里自行绑定） |
+| 社区与互动 | 自定义表情包开关、@ 提及开关、热搜词开关 |
 
 ---
 
@@ -328,8 +339,12 @@ PhotonV/
 | 弹幕 | `GET /api/videos/{id}/danmaku` `POST /api/videos/{id}/danmaku` `DELETE /api/danmaku/{id}` |
 | 评论 | `GET /api/videos/{id}/comments` `POST /api/videos/{id}/comments` `POST /api/comments/{id}/like` `POST /api/comments/{id}/pin` `DELETE /api/comments/{id}` |
 | 互动 | `POST /api/videos/{id}/like` `.../coin` `.../favorite` `.../watch-later` `.../progress` `GET /api/me/watch-later` `GET /api/me/favorite-folders` |
+| 合集 | `GET /api/playlists/mine` `POST /api/playlists` `PUT/DELETE /api/playlists/{id}` `GET /api/playlists/{id}` `POST/DELETE /api/playlists/{id}/items` `POST /api/playlists/{id}/reorder` `GET /api/users/{username}/playlists` |
+| 笔记 | `GET/POST /api/videos/{id}/notes` `PUT/DELETE /api/notes/{id}` `GET /api/me/notes` |
+| 表情包 | `GET /api/emojis` `GET /api/emojis/popular` `POST /api/emojis` `PUT/DELETE /api/emojis/{id}` `POST /api/emojis/{id}/collect` `POST /api/emojis/{id}/use` |
 | 用户 | `GET /api/users/{username}` `/videos` `/followers` `/following` `/favorites` `/history` `POST /api/users/{username}/follow` |
-| 站点 | `GET /api/settings` `GET /api/meta` `GET /api/home` `GET /api/categories` `GET /api/tags` `GET /api/search` `GET /api/rank` `GET /api/following-feed` `GET /api/announcements` |
+| 站点 | `GET /api/settings` `GET /api/meta` `GET /api/home` `GET /api/categories` `GET /api/tags` `GET /api/search` `GET /api/search/hot` `GET /api/rank` `GET /api/following-feed` `GET /api/announcements` |
+| SEO | `GET /sitemap.xml` `GET /rss.xml` `GET /robots.txt`（根路径，不带 `/api`） |
 | 上传 | `POST /api/upload/video` `POST /api/upload/image` `POST /api/upload/avatar` |
 | 消息 / 举报 | `GET /api/notifications` `POST /api/notifications/read` `POST /api/reports` `GET /api/reports/mine` |
 | 管理 | `/api/admin/dashboard` `/users` `/videos` `/comments` `/danmaku` `/categories` `/tags` `/reports` `/announcements` `/carousel` `/settings` `/logs/audit` `/logs/login` `/backups` `/maintenance/cleanup` |
@@ -534,6 +549,24 @@ Copyright © 2026 X4CE
 ---
 
 ## 更新日志
+
+### 1.3.0
+
+- **合集 / 播放列表**：把多个视频整理成合集按顺序连播，支持新建 / 编辑 / 删除、
+  增删视频、调整顺序、公开或私有；视频页一键加入合集，UP 主主页展示公开合集
+- **视频笔记**：按时间点记笔记，点时间戳跳回视频对应位置，单条可设为公开或私密
+- **表情包**：上传图片 / GIF 制作表情，评论框与私信一键插入，
+  「热门」里可以收藏别人的表情；评论与私信以图片形式渲染表情
+- **@ 提及**：评论里 `@用户名` 会高亮，并给对方发通知
+- **定时发布**：投稿时指定发布时间（30 天内），到点自动公开并通知作者
+- **登录记录**：个人设置里查看最近 30 次登录的 IP、设备与时间
+- **热搜词**：搜索页展示站内真实热搜榜，无数据时用热门标签补齐
+- **SEO**：新增 `/sitemap.xml`、`/rss.xml`、`/robots.txt`
+- **注册必填项改为两个独立开关**：注册需要邮箱 / 注册需要手机号，都不勾则都选填，
+  没勾的那一项用户之后可在个人设置里自行绑定
+- 修复：`user_me()` 漏写 `return` 导致登录 / 注册 / 个人资料接口返回 `user: null`；
+  投稿、评论、弹幕、举报的限流改到参数校验之后，表单填错不再白白进入冷却；
+  健康检查接口的版本号与实际版本对齐
 
 ### 1.2.0
 

@@ -18,6 +18,7 @@ from ..utils import (
     notify,
     pagination,
     rate_limit,
+    notify_mentions,
     user_brief,
 )
 
@@ -113,9 +114,6 @@ def create_comment(
         raise fail(404, "视频不存在")
     if not video.allow_comment:
         raise fail(403, "该视频已关闭评论")
-    interval = site.get_int("comment_interval", 5)
-    if not rate_limit(f"comment:{user.id}", interval):
-        raise fail(429, f"评论过于频繁，请 {interval} 秒后再试")
 
     content = str(payload.get("content") or "").strip()
     if not content:
@@ -124,6 +122,11 @@ def create_comment(
     if len(content) > max_len:
         raise fail(400, f"评论最多 {max_len} 个字符")
     check_banned_words(content)
+
+    # 限流放在校验之后：表单填错不会白等一个冷却时间
+    interval = site.get_int("comment_interval", 5)
+    if not rate_limit(f"comment:{user.id}", interval):
+        raise fail(429, f"评论过于频繁，请 {interval} 秒后再试")
 
     parent_id = int(payload["parent_id"]) if payload.get("parent_id") else None
     parent = db.get(models.Comment, parent_id) if parent_id else None
@@ -152,6 +155,7 @@ def create_comment(
             db, parent.user_id, "reply", f"{user.display_name or user.username} 回复了你",
             content[:200], from_id=user.id, ref_type="video", ref_id=video.id, setting_key="notify_reply",
         )
+    notify_mentions(db, content, user, "video", video.id, "评论")
     audit(db, request, user, "comment.create", "comment", comment.id)
     return comment_payload(comment, db, user)
 

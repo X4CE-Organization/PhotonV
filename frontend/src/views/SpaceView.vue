@@ -67,10 +67,22 @@ async function loadFollows(kind: 'followers' | 'following') {
   follows.value = result.items || [];
 }
 
+const playlists = ref<any[]>([]);
+
+async function loadPlaylists() {
+  try {
+    const result = await api.get<any>(`/api/users/${route.params.username}/playlists`);
+    playlists.value = result.items || [];
+  } catch {
+    playlists.value = [];
+  }
+}
+
 function switchTab(value: string) {
   tab.value = value;
   if (value === 'followers') void loadFollows('followers');
   else if (value === 'following') void loadFollows('following');
+  else if (value === 'playlists') void loadPlaylists();
 }
 
 async function toggleFollow() {
@@ -135,6 +147,7 @@ onMounted(load);
         <button class="hover:text-primary" @click="switchTab('videos')"><b>{{ data.videoCount }}</b> <span class="text-xs text-slate-400">投稿</span></button>
         <button class="hover:text-primary" @click="switchTab('followers')"><b>{{ data.followers }}</b> <span class="text-xs text-slate-400">粉丝</span></button>
         <button class="hover:text-primary" @click="switchTab('following')"><b>{{ data.following }}</b> <span class="text-xs text-slate-400">关注</span></button>
+        <button class="hover:text-primary" @click="switchTab('playlists')"><Icon name="list" :size="13" /> <span class="text-xs text-slate-400">合集</span></button>
         <span><b>{{ formatNumber(data.playCount) }}</b> <span class="text-xs text-slate-400">总播放</span></span>
         <span><b>{{ formatNumber(data.likeCount) }}</b> <span class="text-xs text-slate-400">获赞</span></span>
         <span v-if="level" class="ml-auto text-xs text-slate-400">
@@ -167,6 +180,26 @@ onMounted(load);
         <VideoCard v-for="video in items" :key="video.id" :video="video" />
       </div>
       <PaginationBar :page="page" :size="size" :total="total" @change="(value) => { page = value; load(); }" />
+    </template>
+
+    <template v-else-if="tab === 'playlists'">
+      <p v-if="!playlists.length" class="card p-16 text-center text-sm text-slate-400">还没有公开的合集</p>
+      <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <RouterLink
+          v-for="item in playlists"
+          :key="item.id"
+          :to="`/playlist/${item.id}`"
+          class="card overflow-hidden hover:shadow-md"
+        >
+          <img v-if="item.cover" :src="item.cover" class="h-28 w-full object-cover" alt="" />
+          <div v-else class="grid h-28 w-full place-items-center bg-primary/5 text-xs text-slate-400">暂无封面</div>
+          <div class="space-y-1 p-3">
+            <div class="line-clamp-1 text-sm font-medium">{{ item.title }}</div>
+            <p class="line-clamp-2 text-xs text-slate-400">{{ item.description || '暂无简介' }}</p>
+            <p class="text-[11px] text-slate-400">{{ item.videoCount }} 个视频</p>
+          </div>
+        </RouterLink>
+      </div>
     </template>
 
     <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

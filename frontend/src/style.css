@@ -199,3 +199,17 @@ body {
     transform: translateX(-110%);
   }
 }
+
+/* 评论 / 私信里的表情图片与 @ 提及 */
+.pv-emoji {
+  display: inline-block;
+  height: 1.6em;
+  max-width: 8em;
+  vertical-align: -0.35em;
+  object-fit: contain;
+}
+
+.pv-mention {
+  color: var(--pv-accent);
+  font-weight: 500;
+}

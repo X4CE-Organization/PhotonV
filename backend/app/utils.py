@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+import re
 from datetime import datetime
 from typing import Any, Optional
 
@@ -202,6 +203,7 @@ def video_brief(
         data["source"] = video.source or ""
         data["filesize"] = video.filesize
         data["rejectReason"] = video.reject_reason or ""
+        data["scheduledAt"] = iso(video.scheduled_at)
     if flags:
         data.update(flags)
     return data
@@ -261,9 +263,112 @@ def notify(
     db.commit()
 
 
+# ---------------------------------------------------------------- @ 提及
+
+MENTION_RE = re.compile(r"@([A-Za-z0-9_\u4e00-\u9fa5-]{1,32})")
+
+
+def extract_mentions(text: str, limit: int = 10) -> list[str]:
+    """从一段文字里取出 @用户名，自动去重并保持出现顺序。"""
+    seen: list[str] = []
+    for match in MENTION_RE.finditer(text or ""):
+        name = match.group(1)
+        if name not in seen:
+            seen.append(name)
+        if len(seen) >= limit:
+            break
+    return seen
+
+
+def notify_mentions(
+    db: Session,
+    text: str,
+    sender: models.User,
+    ref_type: str,
+    ref_id: Optional[int],
+    source: str,
+    extra: str = "",
+) -> list[int]:
+    """给被 @ 到的用户发通知，返回命中的用户 id。"""
+    if not site.get_bool("mention_enabled", True):
+        return []
+    names = extract_mentions(text)
+    if not names:
+        return []
+    rows = db.scalars(select(models.User).where(models.User.username.in_(names))).all()
+    hit: list[int] = []
+    for target in rows:
+        if target.id == sender.id:
+            continue
+        notify(
+            db,
+            target.id,
+            "mention",
+            f"{sender.display_name or sender.username} 在{source}里提到了你",
+            (extra or text)[:200],
+            from_id=sender.id,
+            ref_type=ref_type,
+            ref_id=ref_id,
+        )
+        hit.append(target.id)
+    return hit
+
+
 # ------------------------------------------------------------ 限流 / 敏感词
 
 _buckets: dict[str, float] = {}
+
+
+# ------------------------------------------------------------ 定时发布
+
+_last_publish_sweep = 0.0
+
+
+def publish_due_videos(db: Session, throttle_seconds: int = 20) -> int:
+    """把到点的定时投稿自动公开。
+
+    用的是「顺手扫一遍」的方式：调用方按需触发，内部节流，避免每个请求都查库。
+    返回本次公开的视频数量。
+    """
+    global _last_publish_sweep
+    current = time.time()
+    if current - _last_publish_sweep < throttle_seconds:
+        return 0
+    _last_publish_sweep = current
+
+    due = db.scalars(
+        select(models.Video).where(
+            models.Video.scheduled_at.is_not(None),
+            models.Video.scheduled_at <= now(),
+            models.Video.status == "pending",
+            models.Video.deleted_at.is_(None),
+        )
+    ).all()
+    if not due:
+        return 0
+
+    published: list[tuple[int, int, str]] = []
+    for video in due:
+        video.status = "published"
+        video.published_at = video.published_at or now()
+        video.scheduled_at = None
+        author = db.get(models.User, video.author_id)
+        if author:
+            author.video_count += 1
+        published.append((video.author_id, video.id, video.title))
+    db.commit()
+    for author_id, video_id, title in published:
+        notify(
+            db,
+            author_id,
+            "review",
+            f"你的定时投稿《{title}》已自动公开",
+            "到了你设定的发布时间，视频已经自动发布。",
+            ref_type="video",
+            ref_id=video_id,
+            setting_key="notify_review",
+        )
+    return len(published)
 
 
 def rate_limit(key: str, interval_seconds: int) -> bool:

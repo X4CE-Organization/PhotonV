@@ -25,6 +25,23 @@ const reportDetail = ref('');
 const showCharge = ref(false);
 const chargeCoins = ref(50);
 const quality = ref('auto');
+const player = ref<any>(null);
+const panel = ref<'comments' | 'notes'>('comments');
+const notes = ref<any[]>([]);
+const noteDraft = ref('');
+const notePublic = ref(true);
+const notesEnabled = ref(true);
+const playlists = ref<any[]>([]);
+const showPlaylists = ref(false);
+
+const notesOpen = computed(() => store.settings.video_notes_enabled !== false);
+
+function clock(seconds: number): string {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 const reasons = computed(() => (Array.isArray(store.settings.report_reasons) ? store.settings.report_reasons : []));
 const variants = computed(() => video.value?.variants || []);
@@ -45,11 +62,92 @@ async function load() {
       following.value = Boolean(profile.isFollowing);
       const favs = await api.get<any>('/api/me/favorite-folders');
       folders.value = favs.items || [];
+      void loadPlaylists();
+      void loadNotes();
     }
   } catch (error) {
     toast.error(error instanceof Error ? error.message : '视频不存在');
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadNotes() {
+  try {
+    const data = await api.get<any>(`/api/videos/${route.params.id}/notes`);
+    notes.value = data.items || [];
+    notesEnabled.value = data.enabled !== false;
+  } catch {
+    notes.value = [];
+  }
+}
+
+async function loadPlaylists() {
+  try {
+    const data = await api.get<any>(`/api/playlists/with-video/${route.params.id}`);
+    playlists.value = data.items || [];
+  } catch {
+    playlists.value = [];
+  }
+}
+
+async function togglePlaylist(item: any) {
+  if (!requireLogin()) return;
+  try {
+    if (item.contains) {
+      await api.del(`/api/playlists/${item.id}/items/${video.value.id}`);
+      item.contains = false;
+      item.videoCount = Math.max(0, (item.videoCount || 1) - 1);
+      toast.success('已从合集移除');
+    } else {
+      await api.post(`/api/playlists/${item.id}/items`, { video_id: video.value.id });
+      item.contains = true;
+      item.videoCount = (item.videoCount || 0) + 1;
+      toast.success(`已加入《${item.title}》`);
+    }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '操作失败');
+  }
+}
+
+async function jumpTo(seconds: number) {
+  player.value?.seekTo?.(Number(seconds) || 0);
+}
+
+async function saveNote() {
+  if (!requireLogin()) return;
+  const content = noteDraft.value.trim();
+  if (!content) return;
+  try {
+    const data = await api.post<any>(`/api/videos/${route.params.id}/notes`, {
+      content,
+      time: Number(player.value?.position?.() || 0),
+      is_public: notePublic.value,
+    });
+    notes.value = [...notes.value, data.note].sort((a, b) => a.time - b.time);
+    noteDraft.value = '';
+    toast.success('笔记已保存');
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '保存失败');
+  }
+}
+
+async function removeNote(item: any) {
+  try {
+    await api.del(`/api/notes/${item.id}`);
+    notes.value = notes.value.filter((row) => row.id !== item.id);
+    toast.success('已删除');
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '删除失败');
+  }
+}
+
+async function toggleNotePublic(item: any) {
+  try {
+    const data = await api.put<any>(`/api/notes/${item.id}`, { is_public: !item.isPublic });
+    item.isPublic = data.note.isPublic;
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '修改失败');
   }
 }
 
@@ -153,6 +251,7 @@ onMounted(load);
   <div v-else-if="video" class="grid gap-4 lg:grid-cols-[1fr_330px]">
     <div class="space-y-4">
       <DanmakuPlayer
+        ref="player"
         :video="video"
         :danmaku="danmaku"
         :allow-danmaku="allowDanmaku"
@@ -195,6 +294,29 @@ onMounted(load);
               >
                 {{ folder.name }}
               </button>
+            </div>
+          </div>
+          <div v-if="store.settings.playlist_enabled !== false" class="relative">
+            <button class="btn-ghost" :class="playlists.some((item) => item.contains) ? '!text-[var(--pv-accent)]' : ''" @click="showPlaylists = !showPlaylists">
+              <Icon name="list" :size="16" />合集
+            </button>
+            <div v-if="showPlaylists" class="absolute left-0 top-full z-20 mt-1 w-56 rounded-2xl border border-[var(--pv-border)] bg-[var(--pv-surface)] p-1.5">
+              <p v-if="!store.isLogin" class="px-3 py-2 text-xs muted">登录后可以加入合集</p>
+              <template v-else>
+                <button
+                  v-for="item in playlists"
+                  :key="item.id"
+                  class="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-[var(--pv-surface-2)]"
+                  @click="togglePlaylist(item)"
+                >
+                  <span class="truncate">{{ item.title }}</span>
+                  <span v-if="item.contains" class="shrink-0 text-xs text-[var(--pv-accent)]">已加入</span>
+                </button>
+                <p v-if="!playlists.length" class="px-3 py-2 text-xs muted">还没有合集</p>
+              </template>
+              <RouterLink to="/playlists" class="mt-1 block rounded-xl px-3 py-2 text-xs text-[var(--pv-accent)] hover:bg-[var(--pv-surface-2)]" @click="showPlaylists = false">
+                管理我的合集 →
+              </RouterLink>
             </div>
           </div>
           <button class="btn-ghost" @click="share"><Icon name="share" :size="16" />分享</button>
@@ -255,7 +377,70 @@ onMounted(load);
         </div>
       </div>
 
-      <CommentList :video-id="video.id" :allow-comment="Boolean(video.allowComment)" />
+      <div class="surface p-4">
+        <div class="mb-3 flex items-center gap-2">
+          <button
+            class="rounded-full px-3 py-1 text-sm"
+            :class="panel === 'comments' ? 'bg-[var(--pv-surface-2)] font-medium' : 'muted'"
+            @click="panel = 'comments'"
+          >
+            评论 {{ video.comments }}
+          </button>
+          <button
+            v-if="notesOpen"
+            class="rounded-full px-3 py-1 text-sm"
+            :class="panel === 'notes' ? 'bg-[var(--pv-surface-2)] font-medium' : 'muted'"
+            @click="panel = 'notes'"
+          >
+            笔记 {{ notes.length }}
+          </button>
+        </div>
+
+        <div v-if="panel === 'notes'" class="space-y-3">
+          <template v-if="store.isLogin">
+            <div class="rounded-2xl border border-[var(--pv-border)] p-3">
+              <textarea
+                v-model="noteDraft"
+                class="input min-h-[70px]"
+                placeholder="在当前位置记一条笔记，点下方时间可以跳回去看"
+              />
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <label class="flex items-center gap-2 text-xs muted">
+                  <input v-model="notePublic" type="checkbox" />公开这条笔记
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs muted">记录位置 {{ clock(player?.position?.() || 0) }}</span>
+                  <button class="btn-primary text-xs" :disabled="!noteDraft.trim()" @click="saveNote">保存笔记</button>
+                </div>
+              </div>
+            </div>
+          </template>
+          <p v-else class="text-xs muted">登录后可以在这里记笔记。</p>
+
+          <div v-if="notes.length" class="space-y-2">
+            <div v-for="item in notes" :key="item.id" class="rounded-2xl bg-[var(--pv-surface-2)] p-3">
+              <div class="flex items-center gap-2">
+                <button class="chip !py-0 text-[11px] hover:!text-[var(--pv-accent)]" @click="jumpTo(item.time)">
+                  {{ clock(item.time) }}
+                </button>
+                <span class="text-xs muted">{{ item.author?.displayName }}</span>
+                <span v-if="!item.isPublic" class="chip !py-0 text-[10px]">仅自己可见</span>
+                <span class="ml-auto text-[11px] muted">{{ fromNow(item.createdAt) }}</span>
+              </div>
+              <p class="mt-1.5 whitespace-pre-wrap text-sm">{{ item.content }}</p>
+              <div v-if="item.isMine" class="mt-1.5 flex gap-3 text-[11px]">
+                <button class="muted hover:text-[var(--pv-accent)]" @click="toggleNotePublic(item)">
+                  {{ item.isPublic ? '设为私密' : '设为公开' }}
+                </button>
+                <button class="text-rose-500 hover:underline" @click="removeNote(item)">删除</button>
+              </div>
+            </div>
+          </div>
+          <p v-else class="text-xs muted">还没有笔记，边看边记一条吧。</p>
+        </div>
+
+        <CommentList v-else :video-id="video.id" :allow-comment="Boolean(video.allowComment)" />
+      </div>
     </div>
 
     <aside class="space-y-3">

@@ -21,24 +21,28 @@ from .routers import (
     auth,
     comments,
     danmaku,
+    emojis,
     interactions,
     live,
     mail,
     messages,
+    notes,
     notifications,
     oauth,
     orders,
     payments,
     phone,
+    playlists,
     public,
     reports,
+    seo,
     uploads,
     users,
     videos,
     ws,
 )
 
-app = FastAPI(title="PhotonV API", version="1.0.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="PhotonV API", version="1.3.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 app.add_middleware(
     CORSMiddleware,
@@ -116,7 +120,7 @@ async def validation_error(_request: Request, exc: RequestValidationError):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.0.0"}
+    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.3.0"}
 
 
 for module in (
@@ -126,8 +130,11 @@ for module in (
     mail,
     users,
     videos,
+    playlists,
+    notes,
     comments,
     danmaku,
+    emojis,
     interactions,
     messages,
     phone,
@@ -136,6 +143,7 @@ for module in (
     orders,
     notifications,
     reports,
+    seo,
     uploads,
     ws,
     admin,

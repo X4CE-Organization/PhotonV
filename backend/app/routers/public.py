@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
 from .. import models, redis_client as redis, settings_store as site
 from ..database import get_db
 from ..security import current_user
-from ..utils import iso, pagination, tag_rows, user_brief, video_brief, viewer_flags
+from ..utils import iso, pagination, publish_due_videos, tag_rows, user_brief, video_brief, viewer_flags
 
 router = APIRouter(prefix="/api", tags=["public"])
 
@@ -54,6 +54,7 @@ def meta(db: Session = Depends(get_db)):
 
 @router.get("/home")
 def home(db: Session = Depends(get_db), viewer: Optional[models.User] = Depends(current_user)):
+    publish_due_videos(db)
     ttl = site.get_int("cache_home_seconds", 10)
     anonymous = viewer is None
     if ttl and anonymous:
@@ -189,8 +190,12 @@ def search(
 ):
     keyword = q.strip()
     if not keyword:
+        _, size, _, _ = pagination(page, size, site.get_int("video_page_size", 24), 60)
         return {"videos": [], "users": [], "total": 0, "page": page, "size": size}
     like = f"%{keyword}%"
+
+    if site.get_bool("search_hot_enabled", True):
+        redis.counter_incr(f"search:{keyword[:32]}", 7 * 86400)
 
     users = [
         user_brief(item)
@@ -219,6 +224,24 @@ def search(
     }
 
 
+@router.get("/search/hot")
+def hot_searches(db: Session = Depends(get_db)):
+    """热搜词：优先用真实搜索计数，不足时用热度最高的标签补齐。"""
+    items: list[dict] = []
+    if site.get_bool("search_hot_enabled", True):
+        items = redis.top_counters("search:", 10)
+    if len(items) < 10:
+        taken = {item["keyword"] for item in items}
+        rows = db.scalars(select(models.Tag).order_by(models.Tag.use_count.desc()).limit(20)).all()
+        for row in rows:
+            if row.name in taken:
+                continue
+            items.append({"keyword": row.name, "count": row.use_count, "source": "tag"})
+            if len(items) >= 10:
+                break
+    return {"items": items[:10]}
+
+
 @router.get("/rank")
 def ranking(
     type: str = Query("views"),
@@ -227,6 +250,7 @@ def ranking(
     db: Session = Depends(get_db),
     viewer: Optional[models.User] = Depends(current_user),
 ):
+    publish_due_videos(db)
     limit = min(100, max(5, limit))
     if type == "fans":
         users = db.scalars(

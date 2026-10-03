@@ -74,9 +74,6 @@ def create_danmaku(
         raise fail(404, "视频不存在")
     if not video.allow_danmaku:
         raise fail(403, "该视频已关闭弹幕")
-    interval = site.get_int("danmaku_interval", 3)
-    if not rate_limit(f"danmaku:{user.id}", interval):
-        raise fail(429, f"弹幕发送过于频繁，请 {interval} 秒后再试")
 
     content = str(payload.get("content") or "").strip()
     if not content:
@@ -85,6 +82,11 @@ def create_danmaku(
     if len(content) > max_len:
         raise fail(400, f"弹幕最多 {max_len} 个字符")
     check_banned_words(content)
+
+    # 限流放在校验之后，避免填错内容也要等冷却
+    interval = site.get_int("danmaku_interval", 3)
+    if not rate_limit(f"danmaku:{user.id}", interval):
+        raise fail(429, f"弹幕发送过于频繁，请 {interval} 秒后再试")
 
     mode = str(payload.get("mode") or "scroll")
     if mode not in {"scroll", "top", "bottom"}:
