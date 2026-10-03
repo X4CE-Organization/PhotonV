@@ -462,6 +462,8 @@ docker compose up -d mediamtx
 管理员可以在 后台 → 直播管理 里开播权限、强制下播或封禁直播间，
 在 后台 → 缓存与转码 里能看到媒体服务器是否连通、当前有几路在推流。
 
+> 直播开播台与 OBS 面板的实际界面：`docs/screenshot-live-studio.png`、`docs/screenshot-live-obs.png`。
+>
 > 想换成 SRS 5+ / nginx-rtmp 也可以：把它们的推流鉴权回调指到 `/api/live/mediamtx/auth`
 > （接口只依赖 `action` 与 `path` 两个字段），再用 `/api/live/mediamtx/hooks/{ready|notready}`
 > 让它们在上线 / 下线时通知本站即可。WebRTC 那两路（WHIP / WHEP）目前是 MediaMTX 才有的能力。
