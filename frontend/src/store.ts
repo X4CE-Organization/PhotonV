@@ -90,16 +90,19 @@ export const useAppStore = defineStore('app', {
       this.user = user;
     },
     async login(username: string, password: string) {
-      const data = await api.post<{ token: string; user: SiteUser }>('/api/auth/login', { username, password });
+      const data = await api.post<{ token: string; user: SiteUser | null }>('/api/auth/login', { username, password });
       setToken(data.token);
       this.user = data.user;
-      return data.user;
+      // 兜底：万一接口没带上用户信息，用 /api/auth/me 补一次，避免调用方读到 null
+      if (!this.user) await this.refresh();
+      return this.user;
     },
     async register(payload: Record<string, unknown>) {
-      const data = await api.post<{ token: string; user: SiteUser }>('/api/auth/register', payload);
+      const data = await api.post<{ token: string; user: SiteUser | null }>('/api/auth/register', payload);
       setToken(data.token);
       this.user = data.user;
-      return data.user;
+      if (!this.user) await this.refresh();
+      return this.user;
     },
     async logout() {
       try {

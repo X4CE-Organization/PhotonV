@@ -70,7 +70,7 @@ async function submit() {
   loading.value = true;
   try {
     const user = await store.register(form.value);
-    toast.success(`注册成功，欢迎 ${user.displayName}`);
+    toast.success(user ? `注册成功，欢迎 ${user.displayName}` : '注册成功');
     router.push('/');
   } catch (err) {
     error.value = err instanceof Error ? err.message : '注册失败';

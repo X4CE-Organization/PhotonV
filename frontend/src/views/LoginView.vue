@@ -28,7 +28,7 @@ async function submit() {
   loading.value = true;
   try {
     const user = await store.login(username.value.trim(), password.value);
-    toast.success(`欢迎回来，${user.displayName}`);
+    toast.success(user ? `欢迎回来，${user.displayName}` : '登录成功');
     router.push(String(route.query.redirect || '/'));
   } catch (err) {
     error.value = err instanceof Error ? err.message : '登录失败';
@@ -67,7 +67,7 @@ async function phoneLogin() {
     const { setToken } = await import('../api');
     setToken(data.token);
     await store.refresh();
-    toast.success(`欢迎回来，${data.user.displayName}`);
+    toast.success(data.user ? `欢迎回来，${data.user.displayName}` : '登录成功');
     router.push(String(route.query.redirect || '/'));
   } catch (err) {
     phoneError.value = err instanceof Error ? err.message : '登录失败';
