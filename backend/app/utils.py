@@ -88,6 +88,7 @@ def user_me(user: models.User) -> dict[str, Any]:
             "phoneVerified": bool(user.phone_verified),
         }
     )
+    return data
 
 
 def _masked_phone(phone):
@@ -103,7 +104,6 @@ def _masked_phone(phone):
         return phone
     prefix = phone[: len(phone) - len(digits) + 3]
     return f"{prefix}****{digits[-4:]}"
-    return data
 
 
 def tag_rows(db: Session, video_ids: list[int]) -> dict[int, list[dict]]:

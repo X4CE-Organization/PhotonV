@@ -49,20 +49,12 @@ def username_taken(db: Session, username: str) -> bool:
     return bool(db.scalar(select(models.User.id).where(models.User.username == username)))
 
 
-def register_requirement() -> str:
-    """注册必填项：none | email | phone | both（兼容旧的 register_need_email / phone_required_register）。"""
-    mode = (site.get_str("register_require", "") or "").strip()
-    if mode in {"none", "email", "phone", "both"}:
-        return mode
-    email = site.get_bool("register_need_email", False)
-    phone = site.get_bool("phone_required_register", False)
-    if email and phone:
-        return "both"
-    if email:
-        return "email"
-    if phone:
-        return "phone"
-    return "none"
+def register_requirement() -> dict[str, bool]:
+    """注册必填项：后台两个独立开关，都不勾选时邮箱与手机号都是选填。"""
+    return {
+        "email": site.get_bool("register_need_email", False),
+        "phone": site.get_bool("phone_required_register", False),
+    }
 
 
 def set_cookie(response: Response, token: str, days: int) -> None:
@@ -91,8 +83,8 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
     if password2 and password2 != password:
         raise fail(400, "两次输入的密码不一致")
     requirement = register_requirement()
-    email_required = requirement in {"email", "both"}
-    phone_required = requirement in {"phone", "both"}
+    email_required = requirement["email"]
+    phone_required = requirement["phone"]
     if email_required and not email:
         raise fail(400, "请填写邮箱")
 

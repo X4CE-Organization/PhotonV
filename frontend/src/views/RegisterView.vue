@@ -15,12 +15,9 @@ const cooldown = ref(0);
 const providers = ref<any[]>([]);
 const phoneCooldown = ref(0);
 
-// 注册必填项：none | email | phone | both（由后台「注册与登录」设置决定）
-const requirement = computed(() => String(store.settings.register_require ?? 'none'));
-const emailRequired = computed(
-  () => requirement.value === 'email' || requirement.value === 'both' || !!store.settings.mail_register_verify,
-);
-const phoneRequired = computed(() => requirement.value === 'phone' || requirement.value === 'both');
+// 后台两个独立开关：注册需要邮箱 / 注册需要手机号
+const emailRequired = computed(() => !!store.settings.register_need_email || !!store.settings.mail_register_verify);
+const phoneRequired = computed(() => !!store.settings.phone_required_register);
 const phoneNeedVerify = computed(() => store.settings.phone_register_verify !== false);
 
 async function sendPhoneCode() {
