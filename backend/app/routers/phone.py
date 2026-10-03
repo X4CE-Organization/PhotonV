@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from .. import models, settings_store as site, sms
+from ..config import settings as app_settings
 from ..database import get_db
 from ..security import create_token, require_admin, require_user
 from ..utils import audit, fail, notify, now, user_me
@@ -38,7 +39,11 @@ def issue_and_send(db: Session, phone: str, purpose: str, user_id: Optional[int]
                 f"手机号 {phone} 的验证码是 {code}，{site.get_int('sms_code_ttl_minutes', 10)} 分钟内有效。",
             )
         print(f"[photonv] 短信开发模式：{phone} 的验证码是 {code}")
-        return {"ok": True, "dev": True, "code": code}
+        payload = {"ok": True, "dev": True}
+        # 只有本地调试（非生产）或显式打开开关时才把验证码返回给前端
+        if not app_settings.is_prod or site.get_bool("sms_dev_expose_code", False):
+            payload["code"] = code
+        return payload
     raise fail(400, f"短信发送失败：{result.get('error')}")
 
 

@@ -295,6 +295,8 @@ _EXTRA: list[dict] = [
     _f("sms_code_ttl_minutes", "验证码有效期（分钟）", "number", 10, "sms", min=1, max=60),
     _f("sms_code_interval", "验证码发送间隔（秒）", "number", 60, "sms", min=10, max=3600),
     _f("sms_daily_limit", "每个手机号每日发送上限", "number", 10, "sms", min=1, max=100),
+    _f("sms_dev_expose_code", "开发模式下把验证码返回给前端", "boolean", False, "sms",
+       description="仅本地调试时打开；生产环境请保持关闭，验证码只会写进日志与站内信"),
     _f("phone_login_enabled", "允许手机号 + 验证码登录", "boolean", True, "sms", public=True),
     _f("phone_required_register", "注册必须填写手机号", "boolean", False, "sms", public=True),
     _f("phone_required_bind", "必须绑定手机号才能投稿 / 评论", "boolean", False, "sms", public=True),
