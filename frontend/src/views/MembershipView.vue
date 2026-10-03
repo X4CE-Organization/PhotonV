@@ -13,11 +13,76 @@ const membership = ref<any>(null);
 const loading = ref(true);
 const amount = ref(10);
 const busy = ref(false);
+const methods = ref<any[]>([]);
+const payMethod = ref('manual');
+const checkout = ref<any>(null);
+const payState = ref<any>(null);
+const pollTimer = ref<number | null>(null);
+
+function stopPolling() {
+  if (pollTimer.value) window.clearInterval(pollTimer.value);
+  pollTimer.value = null;
+}
+
+async function startPolling(order: any) {
+  stopPolling();
+  pollTimer.value = window.setInterval(async () => {
+    try {
+      const status = await api.get<any>(`/api/payments/${order.id}/status`);
+      payState.value = { ...payState.value, status: status.status };
+      if (status.status === 'paid') {
+        stopPolling();
+        toast.success('支付成功，权益已到账');
+        checkout.value = null;
+        await load();
+      }
+    } catch {
+      /* ignore */
+    }
+  }, Math.max(1, Number(store.settings.pay_poll_seconds || 3)) * 1000);
+}
+
+async function confirmPay() {
+  if (!checkout.value) return;
+  busy.value = true;
+  try {
+    const payload: any = { type: checkout.value.type, pay_method: payMethod.value };
+    if (checkout.value.type === 'membership') payload.plan_id = checkout.value.plan.id;
+    if (checkout.value.type === 'coins') payload.amount_cents = Math.round(checkout.value.amount * 100);
+    const created = await api.post<any>('/api/orders', payload);
+    const order = created.order;
+    const payment = await api.post<any>(`/api/payments/${order.id}/create`, { method: payMethod.value });
+    if (payment.method === 'manual') {
+      payState.value = { mode: 'manual', message: payment.message, status: order.status, orderId: order.id };
+    } else if (payment.mode === 'page') {
+      window.open(payment.payUrl, '_blank');
+      payState.value = { mode: 'page', payUrl: payment.payUrl, status: order.status, orderId: order.id };
+      await startPolling(order);
+    } else {
+      payState.value = { mode: 'qr', qrUrl: payment.qrUrl, qrCode: payment.qrCode, status: order.status, orderId: order.id };
+      await startPolling(order);
+    }
+    await load();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '下单失败');
+  } finally {
+    busy.value = false;
+  }
+}
+
+function closeCheckout() {
+  stopPolling();
+  checkout.value = null;
+  payState.value = null;
+}
 
 async function load() {
   loading.value = true;
   try {
     plans.value = await api.get<any>('/api/plans');
+    methods.value = (await api.get<any>('/api/payments/methods')).items || [];
+    const firstEnabled = methods.value.find((item: any) => item.enabled);
+    if (firstEnabled) payMethod.value = firstEnabled.id;
     if (store.isLogin) {
       try {
         const mine = await api.get<any>('/api/orders/mine');
@@ -42,32 +107,14 @@ function requireLogin(): boolean {
 
 async function buyMembership(plan: any) {
   if (!requireLogin()) return;
-  busy.value = true;
-  try {
-    const result = await api.post<any>('/api/orders', { type: 'membership', plan_id: plan.id });
-    await api.post(`/api/orders/${result.order.id}/pay`, {});
-    toast.success('下单成功，请在订单里查看状态');
-    await load();
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : '下单失败');
-  } finally {
-    busy.value = false;
-  }
+  checkout.value = { type: 'membership', plan, title: `开通${plan.name}`, amount: plan.priceYuan };
+  payState.value = null;
 }
 
 async function recharge() {
   if (!requireLogin()) return;
-  busy.value = true;
-  try {
-    const result = await api.post<any>('/api/orders', { type: 'coins', amount_cents: Math.round(amount.value * 100) });
-    await api.post(`/api/orders/${result.order.id}/pay`, {});
-    toast.success('充值订单已创建');
-    await load();
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : '充值失败');
-  } finally {
-    busy.value = false;
-  }
+  checkout.value = { type: 'coins', amount: Number(amount.value) || 0, title: `充值 ${Math.round(amount.value * plans.value.coinsPerYuan)} 硬币` };
+  payState.value = null;
 }
 
 onMounted(load);
@@ -168,4 +215,51 @@ onMounted(load);
       </aside>
     </div>
   </div>
+
+    <div v-if="checkout" class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" @click.self="closeCheckout">
+      <div class="w-full max-w-md space-y-3 rounded-2xl border border-[var(--pv-border)] bg-[var(--pv-surface)] p-5">
+        <h3 class="flex items-center gap-2 text-sm font-semibold"><Icon name="card" :size="16" />选择支付方式</h3>
+        <p class="text-xs muted">{{ checkout.title }} · ¥{{ (checkout.type === 'membership' ? checkout.plan.priceYuan : checkout.amount).toFixed(2) }}</p>
+
+        <div class="grid gap-2">
+          <button
+            v-for="item in methods"
+            :key="item.id"
+            class="flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition disabled:opacity-40"
+            :class="payMethod === item.id ? 'border-[var(--pv-accent)] bg-[var(--pv-accent)]/10' : 'border-[var(--pv-border)]'"
+            :disabled="!item.enabled"
+            @click="payMethod = item.id"
+          >
+            <Icon :name="item.id === 'wechat' ? 'message' : item.id === 'alipay' ? 'card' : 'coin'" :size="18" />
+            <span class="flex-1">
+              {{ item.name }}
+              <span class="ml-2 text-[11px] muted">
+                {{ item.id === 'manual' ? '联系管理员确认收款' : item.mode === 'qr' ? '站内扫码' : item.mode === 'page' ? '跳转支付宝页面' : '微信扫码' }}
+              </span>
+            </span>
+            <span v-if="!item.enabled" class="text-[11px] muted">未配置</span>
+          </button>
+        </div>
+
+        <div v-if="payState?.mode === 'qr'" class="space-y-2 text-center">
+          <img :src="payState.qrUrl" class="mx-auto h-48 w-48 rounded-xl bg-white p-2" alt="支付二维码" />
+          <p class="text-xs muted">用手机扫码支付，页面会自动刷新（状态：{{ payState.status === 'paid' ? '已支付' : '等待支付' }}）</p>
+        </div>
+        <div v-else-if="payState?.mode === 'page'" class="space-y-2 text-center text-xs muted">
+          <p>已打开支付宝收银台，如果没弹出请点下面的链接：</p>
+          <a :href="payState.payUrl" target="_blank" class="link break-all">去支付宝支付</a>
+          <p>支付完成后本页会自动更新（状态：{{ payState.status === 'paid' ? '已支付' : '等待支付' }}）</p>
+        </div>
+        <p v-else-if="payState?.mode === 'manual'" class="rounded-xl bg-[var(--pv-surface-2)] p-3 text-xs muted">
+          {{ payState.message || '下单后请联系管理员并提供订单号，管理员确认收款后权益会自动到账。' }}
+        </p>
+
+        <div class="flex justify-end gap-2 pt-1">
+          <button class="btn-ghost" @click="closeCheckout">关闭</button>
+          <button v-if="!payState" class="btn-primary" :disabled="busy" @click="confirmPay">
+            {{ busy ? '下单中…' : '确认支付' }}
+          </button>
+        </div>
+      </div>
+    </div>
 </template>

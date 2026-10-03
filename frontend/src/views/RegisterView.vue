@@ -8,11 +8,31 @@ import Icon from '../components/Icon.vue';
 
 const store = useAppStore();
 const router = useRouter();
-const form = ref({ username: '', email: '', password: '', password2: '', invite_code: '', email_code: '' });
+const form = ref({ username: '', email: '', password: '', password2: '', invite_code: '', email_code: '', phone: '', phone_code: '' });
 const loading = ref(false);
 const error = ref('');
 const cooldown = ref(0);
 const providers = ref<any[]>([]);
+const phoneCooldown = ref(0);
+
+async function sendPhoneCode() {
+  error.value = '';
+  if (!form.value.phone.trim()) {
+    error.value = '请先填写手机号';
+    return;
+  }
+  try {
+    await api.post('/api/auth/sms-code', { phone: form.value.phone.trim(), purpose: 'register' });
+    toast.success('验证码已发送（开发模式下会写进日志与站内信）');
+    phoneCooldown.value = 60;
+    const timer = window.setInterval(() => {
+      phoneCooldown.value -= 1;
+      if (phoneCooldown.value <= 0) window.clearInterval(timer);
+    }, 1000);
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '发送失败';
+  }
+}
 
 async function sendCode() {
   error.value = '';
@@ -86,6 +106,19 @@ onMounted(async () => {
           <input v-model="form.email_code" class="input flex-1" placeholder="6 位数字" />
           <button type="button" class="btn-ghost shrink-0 text-xs" :disabled="cooldown > 0" @click="sendCode">
             {{ cooldown > 0 ? `${cooldown}s` : '发送验证码' }}
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="label">手机号 {{ store.settings.phone_required_register ? '' : '（可选）' }}</label>
+        <input v-model="form.phone" class="input" placeholder="11 位手机号" />
+      </div>
+      <div v-if="form.phone.trim()">
+        <label class="label">手机验证码</label>
+        <div class="flex gap-2">
+          <input v-model="form.phone_code" class="input flex-1" placeholder="6 位数字" />
+          <button type="button" class="btn-ghost shrink-0 text-xs" :disabled="phoneCooldown > 0" @click="sendPhoneCode">
+            {{ phoneCooldown > 0 ? `${phoneCooldown}s` : '发送验证码' }}
           </button>
         </div>
       </div>

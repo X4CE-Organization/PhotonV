@@ -46,9 +46,19 @@ COLUMN_MIGRATIONS: list[tuple[str, str]] = [
     ("users", "email_verified BOOLEAN NOT NULL DEFAULT false"),
     ("users", "mail_optout BOOLEAN NOT NULL DEFAULT false"),
     ("users", "last_bonus_date VARCHAR(16) NOT NULL DEFAULT ''"),
+    ("users", "phone VARCHAR(32)"),
+    ("users", "phone_verified BOOLEAN NOT NULL DEFAULT false"),
     ("videos", "transcode_status VARCHAR(16) NOT NULL DEFAULT 'pending'"),
     ("videos", "transcode_error VARCHAR(500) NOT NULL DEFAULT ''"),
     ("videos", "hls_path VARCHAR(500) NOT NULL DEFAULT ''"),
+    ("orders", "trade_no VARCHAR(64) NOT NULL DEFAULT ''"),
+    ("orders", "pay_payload TEXT NOT NULL DEFAULT ''"),
+]
+
+# 索引迁移（幂等）
+INDEX_MIGRATIONS: list[str] = [
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL",
+    "CREATE INDEX IF NOT EXISTS idx_sms_codes_phone ON sms_codes(phone, purpose, used)",
 ]
 
 
@@ -58,6 +68,12 @@ def ensure_columns() -> None:
             with engine.begin() as connection:
                 connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {definition}"))
         except Exception:  # noqa: BLE001 - 列已存在
+            continue
+    for statement in INDEX_MIGRATIONS:
+        try:
+            with engine.begin() as connection:
+                connection.execute(text(statement))
+        except Exception:  # noqa: BLE001
             continue
 
 

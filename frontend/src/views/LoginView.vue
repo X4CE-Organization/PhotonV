@@ -18,6 +18,10 @@ const forgotOpen = ref(false);
 const forgot = ref({ account: '', code: '', password: '', password2: '' });
 const cooldown = ref(0);
 const forgotError = ref('');
+const mode = ref<'password' | 'phone'>('password');
+const phoneForm = ref({ phone: '', code: '' });
+const phoneCooldown = ref(0);
+const phoneError = ref('');
 
 async function submit() {
   error.value = '';
@@ -28,6 +32,45 @@ async function submit() {
     router.push(String(route.query.redirect || '/'));
   } catch (err) {
     error.value = err instanceof Error ? err.message : '登录失败';
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function sendPhoneCode() {
+  phoneError.value = '';
+  if (!phoneForm.value.phone.trim()) {
+    phoneError.value = '请填写手机号';
+    return;
+  }
+  try {
+    await api.post('/api/auth/sms-code', { phone: phoneForm.value.phone.trim(), purpose: 'login' });
+    toast.success('验证码已发送（开发模式下会写入站内信）');
+    phoneCooldown.value = 60;
+    const timer = window.setInterval(() => {
+      phoneCooldown.value -= 1;
+      if (phoneCooldown.value <= 0) window.clearInterval(timer);
+    }, 1000);
+  } catch (err) {
+    phoneError.value = err instanceof Error ? err.message : '发送失败';
+  }
+}
+
+async function phoneLogin() {
+  phoneError.value = '';
+  loading.value = true;
+  try {
+    const data = await api.post<{ token: string; user: any }>('/api/auth/phone-login', {
+      phone: phoneForm.value.phone.trim(),
+      code: phoneForm.value.code.trim(),
+    });
+    const { setToken } = await import('../api');
+    setToken(data.token);
+    await store.refresh();
+    toast.success(`欢迎回来，${data.user.displayName}`);
+    router.push(String(route.query.redirect || '/'));
+  } catch (err) {
+    phoneError.value = err instanceof Error ? err.message : '登录失败';
   } finally {
     loading.value = false;
   }
@@ -102,7 +145,36 @@ onMounted(async () => {
     </section>
 
     <form class="surface space-y-3 p-6" @submit.prevent="submit">
-      <h2 class="text-lg font-semibold">登录</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">登录</h2>
+        <div v-if="store.settings.phone_login_enabled !== false" class="flex rounded-full bg-[var(--pv-surface-2)] p-0.5 text-xs">
+          <button type="button" class="rounded-full px-3 py-1" :class="mode === 'password' ? 'bg-[var(--pv-surface)] font-medium' : 'muted'" @click="mode = 'password'">密码登录</button>
+          <button type="button" class="rounded-full px-3 py-1" :class="mode === 'phone' ? 'bg-[var(--pv-surface)] font-medium' : 'muted'" @click="mode = 'phone'">手机号登录</button>
+        </div>
+      </div>
+
+      <template v-if="mode === 'phone'">
+        <div>
+          <label class="label">手机号</label>
+          <input v-model="phoneForm.phone" class="input" placeholder="11 位手机号" />
+        </div>
+        <div>
+          <label class="label">验证码</label>
+          <div class="flex gap-2">
+            <input v-model="phoneForm.code" class="input flex-1" placeholder="6 位数字" />
+            <button type="button" class="btn-ghost shrink-0 text-xs" :disabled="phoneCooldown > 0" @click="sendPhoneCode">
+              {{ phoneCooldown > 0 ? `${phoneCooldown}s` : '发送验证码' }}
+            </button>
+          </div>
+        </div>
+        <p v-if="phoneError" class="text-sm text-rose-500">{{ phoneError }}</p>
+        <button type="button" class="btn-primary w-full" :disabled="loading" @click="phoneLogin">
+          {{ loading ? '登录中…' : '手机号登录' }}
+        </button>
+        <p class="text-center text-xs muted">手机号需要先在「个人设置」里绑定</p>
+      </template>
+
+      <template v-else>
       <div>
         <label class="label">用户名</label>
         <input v-model="username" class="input" autocomplete="username" placeholder="请输入用户名" />
@@ -113,6 +185,7 @@ onMounted(async () => {
       </div>
       <p v-if="error" class="text-sm text-rose-500">{{ error }}</p>
       <button class="btn-primary w-full" :disabled="loading">{{ loading ? '登录中…' : '登录' }}</button>
+      </template>
 
       <div v-if="providers.length" class="space-y-2 pt-2">
         <div class="flex items-center gap-2 text-xs muted">

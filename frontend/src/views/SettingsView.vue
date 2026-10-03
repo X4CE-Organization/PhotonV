@@ -25,6 +25,59 @@ const savingPassword = ref(false);
 const avatarInput = ref<HTMLInputElement | null>(null);
 const mailPref = ref<any>(null);
 const bindings = ref<{ bindings: any[]; providers: any[] } | null>(null);
+const phoneInfo = ref<any>(null);
+const phoneForm = ref({ phone: '', code: '' });
+const phoneCooldown = ref(0);
+
+async function loadPhone() {
+  try {
+    phoneInfo.value = await api.get<any>('/api/me/phone');
+  } catch {
+    phoneInfo.value = null;
+  }
+}
+
+async function sendPhoneCode() {
+  if (!phoneForm.value.phone.trim()) {
+    toast.error('请先填写手机号');
+    return;
+  }
+  try {
+    await api.post('/api/auth/sms-code', { phone: phoneForm.value.phone.trim(), purpose: 'bind' });
+    toast.success('验证码已发送');
+    phoneCooldown.value = 60;
+    const timer = window.setInterval(() => {
+      phoneCooldown.value -= 1;
+      if (phoneCooldown.value <= 0) window.clearInterval(timer);
+    }, 1000);
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '发送失败');
+  }
+}
+
+async function bindPhone() {
+  try {
+    await api.put('/api/me/phone', { phone: phoneForm.value.phone.trim(), code: phoneForm.value.code.trim() });
+    toast.success('手机号已绑定');
+    phoneForm.value = { phone: '', code: '' };
+    await loadPhone();
+    await store.refresh();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '绑定失败');
+  }
+}
+
+async function unbindPhone() {
+  if (!window.confirm('确定解绑手机号吗？')) return;
+  try {
+    await api.del('/api/me/phone');
+    toast.success('已解绑');
+    await loadPhone();
+    await store.refresh();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : '解绑失败');
+  }
+}
 
 async function loadExtras() {
   try {
@@ -114,6 +167,7 @@ async function uploadBanner(file: File) {
 onMounted(() => {
   fill();
   void loadExtras();
+  void loadPhone();
 });
 </script>
 
@@ -257,6 +311,33 @@ onMounted(() => {
         <div class="flex justify-between"><dt class="muted">收到充电</dt><dd>{{ store.user?.totalEarned ?? 0 }} 硬币</dd></div>
       </dl>
       <RouterLink to="/membership" class="btn-ghost mt-3 text-xs">前往会员中心</RouterLink>
+    </section>
+
+    <section class="card p-4 text-sm">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="phone" :size="17" />手机号</h2>
+      <template v-if="phoneInfo?.bound">
+        <div class="mt-3 flex items-center gap-3">
+          <span class="font-medium">{{ phoneInfo.phone }}</span>
+          <span v-if="phoneInfo.verified" class="chip text-[11px]">已验证</span>
+          <button class="ml-auto text-xs text-rose-500 hover:underline" @click="unbindPhone">解绑</button>
+        </div>
+        <p class="mt-2 text-xs muted">解绑后无法使用手机号 + 验证码登录。</p>
+      </template>
+      <template v-else>
+        <p class="mt-2 text-xs muted">
+          绑定后可以用手机号 + 验证码登录{{ phoneInfo?.smsEnabled ? '' : '（当前是开发模式，验证码会写进日志与站内信）' }}。
+        </p>
+        <div class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <input v-model="phoneForm.phone" class="input" placeholder="11 位手机号" />
+          <input v-model="phoneForm.code" class="input" placeholder="验证码" />
+          <button class="btn-ghost text-xs" :disabled="phoneCooldown > 0" @click="sendPhoneCode">
+            {{ phoneCooldown > 0 ? `${phoneCooldown}s` : '发送验证码' }}
+          </button>
+        </div>
+        <div class="mt-3 flex justify-end">
+          <button class="btn-primary text-xs" @click="bindPhone">绑定手机号</button>
+        </div>
+      </template>
     </section>
   </div>
 </template>

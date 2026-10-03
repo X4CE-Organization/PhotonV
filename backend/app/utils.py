@@ -83,8 +83,26 @@ def user_me(user: models.User) -> dict[str, Any]:
             "emailVerified": bool(user.email_verified),
             "mailOptout": bool(user.mail_optout),
             "streamKey": user.stream_key or "",
+            "phone": _masked_phone(user.phone),
+            "phoneBound": bool(user.phone),
+            "phoneVerified": bool(user.phone_verified),
         }
     )
+
+
+def _masked_phone(phone):
+    """手机号脱敏（中间四位），遵循站点设置。"""
+    if not phone:
+        return ""
+    from . import settings_store as _site
+
+    if not _site.get_bool("phone_mask", True):
+        return phone
+    digits = phone.lstrip("+")
+    if len(digits) < 7:
+        return phone
+    prefix = phone[: len(phone) - len(digits) + 3]
+    return f"{prefix}****{digits[-4:]}"
     return data
 
 

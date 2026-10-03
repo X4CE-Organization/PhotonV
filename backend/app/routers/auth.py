@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import mailer, models, redis_client as redis, settings_store as site
+from .. import mailer, models, redis_client as redis, settings_store as site, sms
 from ..database import get_db
 from ..security import create_token, current_user, hash_password, require_user, verify_password
 from ..utils import audit, fail, iso, notify, user_me, now
@@ -103,6 +103,22 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
         if not mailer.consume_code(db, email, "verify", code):
             raise fail(400, "邮箱验证码不正确或已过期")
 
+    # 手机号（可选 / 由设置决定是否必填）
+    phone = sms.normalize(str(payload.get("phone") or ""))
+    phone_required = site.get_bool("phone_required_register", False)
+    if phone_required and not phone:
+        raise fail(400, "请填写手机号")
+    if phone:
+        if not sms.valid(phone):
+            raise fail(400, "手机号格式不正确")
+        if sms.by_phone(db, phone):
+            raise fail(409, "该手机号已被注册")
+        code = str(payload.get("phone_code") or "").strip()
+        if not code:
+            raise fail(400, "请填写手机验证码")
+        if not sms.consume(db, phone, "register", code):
+            raise fail(400, "手机验证码不正确或已过期")
+
     if username_taken(db, username):
         raise fail(409, "该用户名已被注册")
 
@@ -116,6 +132,8 @@ def register(payload: dict, request: Request, response: Response, db: Session = 
         coins=site.get_int("coins_on_register", 5),
         is_private=site.get_bool("default_private", False),
         email_verified=bool(email),
+        phone=phone or None,
+        phone_verified=bool(phone),
         last_login_at=now(),
         last_login_ip=request.client.host if request.client else "",
     )

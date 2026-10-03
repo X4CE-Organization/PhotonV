@@ -67,6 +67,8 @@ class User(Base):
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     mail_optout: Mapped[bool] = mapped_column(Boolean, default=False)
     last_bonus_date: Mapped[str] = mapped_column(String(16), default="")
+    phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    phone_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     last_login_ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
@@ -584,6 +586,22 @@ class Order(Base):
     status: Mapped[str] = mapped_column(String(16), default="pending")
     note: Mapped[str] = mapped_column(String(255), default="")
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    trade_no: Mapped[str] = mapped_column(String(64), default="")
+    pay_payload: Mapped[str] = mapped_column(Text, default="")
+
+
+class SmsCode(Base):
+    __tablename__ = "sms_codes"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    code: Mapped[str] = mapped_column(String(16))
+    purpose: Mapped[str] = mapped_column(String(16), default="bind")
+    user_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
