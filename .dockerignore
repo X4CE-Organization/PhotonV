@@ -1,0 +1,21 @@
+# 构建上下文里不需要的东西
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.py[cod]
+
+# 前端依赖与构建产物：镜像里会重新装依赖、重新构建，
+# 带上本地产物会把陈旧的 chunk 一起塞进镜像
+frontend/node_modules
+frontend/dist
+
+# 运行期数据
+data
+*.log
+
+# 编辑器 / 系统垃圾
+.DS_Store
+.idea
+.vscode
