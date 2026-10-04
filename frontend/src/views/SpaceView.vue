@@ -147,7 +147,12 @@ onMounted(load);
         <button class="hover:text-[var(--pv-accent)]" @click="switchTab('videos')"><b>{{ data.videoCount }}</b> <span class="text-xs muted">投稿</span></button>
         <button class="hover:text-[var(--pv-accent)]" @click="switchTab('followers')"><b>{{ data.followers }}</b> <span class="text-xs muted">粉丝</span></button>
         <button class="hover:text-[var(--pv-accent)]" @click="switchTab('following')"><b>{{ data.following }}</b> <span class="text-xs muted">关注</span></button>
-        <button class="hover:text-[var(--pv-accent)]" @click="switchTab('playlists')"><Icon name="list" :size="13" /> <span class="text-xs muted">合集</span></button>
+        <button
+          class="inline-flex items-center gap-1 hover:text-[var(--pv-accent)]"
+          @click="switchTab('playlists')"
+        >
+          <Icon name="list" :size="14" /><span class="text-xs muted">合集</span>
+        </button>
         <span><b>{{ formatNumber(data.playCount) }}</b> <span class="text-xs muted">总播放</span></span>
         <span><b>{{ formatNumber(data.likeCount) }}</b> <span class="text-xs muted">获赞</span></span>
         <span v-if="level" class="ml-auto text-xs muted">
