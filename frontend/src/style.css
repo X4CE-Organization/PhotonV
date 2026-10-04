@@ -350,3 +350,189 @@ body {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--pv-accent), var(--pv-accent-2));
 }
+
+/* ------------------------------------------------------------------
+   系统设置页
+   左锚点导航 + 右侧「一行一项」的设置列表（标签在左、控件在右），
+   和前台/其它后台页面都不是一套排版
+   ------------------------------------------------------------------ */
+.pv-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pv-settings-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-radius: 14px;
+  border: 1px solid var(--pv-border);
+  background: color-mix(in srgb, var(--pv-bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  padding: 12px 16px;
+}
+
+.pv-settings-body {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .pv-settings-body {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+}
+
+.pv-settings-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 92px;
+}
+
+.pv-settings-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--pv-muted);
+  border-left: 2px solid transparent;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pv-settings-rail-item:hover {
+  color: var(--pv-text);
+  background: var(--pv-surface-2);
+}
+
+.pv-settings-rail-item.is-active {
+  color: var(--pv-accent);
+  background: color-mix(in srgb, var(--pv-accent) 10%, transparent);
+  border-left-color: var(--pv-accent);
+  font-weight: 600;
+}
+
+.pv-settings-panel {
+  border-radius: 14px;
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface);
+  overflow: hidden;
+}
+
+.pv-settings-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  font-size: 13px;
+  background: var(--pv-surface-2);
+  color: var(--pv-text);
+}
+
+/* 一行一项：左边说明、右边控件 */
+.pv-setting-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--pv-border);
+}
+
+@media (min-width: 640px) {
+  .pv-setting-row {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+}
+
+.pv-setting-row:first-of-type {
+  border-top: none;
+}
+
+.pv-setting-row.is-dirty {
+  background: color-mix(in srgb, var(--pv-accent) 5%, transparent);
+}
+
+.pv-setting-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.pv-setting-control {
+  flex: none;
+}
+
+/* 开关 */
+.pv-switch {
+  appearance: none;
+  position: relative;
+  width: 38px;
+  height: 21px;
+  border-radius: 999px;
+  background: var(--pv-surface-2);
+  border: 1px solid var(--pv-border);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  flex: none;
+}
+
+.pv-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--pv-muted);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.pv-switch:checked {
+  background: color-mix(in srgb, var(--pv-accent) 85%, transparent);
+  border-color: transparent;
+}
+
+.pv-switch:checked::after {
+  transform: translateX(17px);
+  background: #fff;
+}
+
+/* 底部未保存提示 */
+.pv-settings-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface);
+  padding: 8px 10px 8px 18px;
+  box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.35);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}

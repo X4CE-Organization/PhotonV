@@ -76,6 +76,18 @@ const ICONS: Record<string, string> = {
   activity: '<path d="M3 12h4l2.5-6 4 12L16 12h5"/>',
   rocket: '<path d="M12 3c4 2 6 6 6 10l-6 5-6-5c0-4 2-8 6-10z"/><circle cx="12" cy="10" r="2"/>',
   dot: '<circle cx="12" cy="12" r="4"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  palette:
+    '<path d="M12 21a9 9 0 1 1 9-9c0 2.2-1.8 3.2-3.6 3.2H16a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 21z"/><circle cx="7.6" cy="12.4" r="1"/><circle cx="9.8" cy="8.2" r="1"/><circle cx="14.8" cy="8.6" r="1"/>',
+  'user-plus': '<circle cx="9.5" cy="8" r="3.5"/><path d="M3.5 20a6 6 0 0 1 12 0"/><path d="M18 8.5v6"/><path d="M15 11.5h6"/>',
+  'message-square': '<path d="M20 15.5a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
+  'shield-check': '<path d="M12 3l7 3v6c0 4.2-2.9 7.7-7 9-4.1-1.3-7-4.8-7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  'hard-drive':
+    '<path d="M5.5 13 7 6.6A1.6 1.6 0 0 1 8.6 5.5h6.8A1.6 1.6 0 0 1 17 6.6L18.5 13v4.4a1.6 1.6 0 0 1-1.6 1.6H7.1a1.6 1.6 0 0 1-1.6-1.6z"/><path d="M5.5 13h13"/><circle cx="8.4" cy="16.2" r=".9"/>',
+  scale: '<path d="M12 3.5v17"/><path d="M7 20.5h10"/><path d="M4.5 7.5h15"/><path d="m4.5 7.5-2.5 6h5z"/><path d="m19.5 7.5 2.5 6h-5z"/>',
+  'key-round': '<circle cx="8" cy="15.5" r="3.8"/><path d="m10.8 12.7 8.7-8.7"/><path d="m16.8 6.7 2.5 2.5"/>',
+  phone:
+    '<path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v14a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z"/><path d="M10.5 17.3h3"/>',
 };
 
 const inner = computed(() => ICONS[props.name] || ICONS.dot);
