@@ -74,7 +74,7 @@ onMounted(load);
       <button class="btn-primary text-xs" @click="openCreate">新建分区</button>
     </div>
 
-    <div class="card overflow-x-auto">
+    <div class="surface overflow-x-auto">
       <table class="table-base">
         <thead>
           <tr>
@@ -86,15 +86,15 @@ onMounted(load);
           <tr v-for="item in categories" :key="item.id">
             <td><Icon :name="item.icon" :size="18" /></td>
             <td>{{ item.name }}</td>
-            <td class="font-mono text-xs text-slate-400">{{ item.slug }}</td>
-            <td class="text-xs text-slate-500">{{ item.description }}</td>
+            <td class="font-mono text-xs muted">{{ item.slug }}</td>
+            <td class="text-xs muted">{{ item.description }}</td>
             <td class="text-xs">{{ item.sort }}</td>
             <td class="text-xs">{{ item.count }}</td>
             <td class="text-xs">
-              <span :class="item.isActive ? 'text-emerald-600' : 'text-slate-400'">{{ item.isActive ? '启用' : '停用' }}</span>
+              <span :class="item.isActive ? 'text-emerald-600' : 'muted'">{{ item.isActive ? '启用' : '停用' }}</span>
             </td>
             <td class="text-xs">
-              <button class="text-primary hover:underline" @click="openEdit(item)">编辑</button>
+              <button class="text-[var(--pv-accent)] hover:underline" @click="openEdit(item)">编辑</button>
               <button class="ml-2 text-rose-500 hover:underline" @click="remove(item)">删除</button>
             </td>
           </tr>
@@ -102,23 +102,23 @@ onMounted(load);
       </table>
     </div>
 
-    <section class="card p-4">
+    <section class="surface p-4">
       <h2 class="text-sm font-semibold">标签（{{ tags.length }}）</h2>
       <div class="mt-3 flex flex-wrap gap-2">
         <span
           v-for="item in tags"
           :key="item.id"
-          class="group flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs dark:bg-slate-800"
+          class="group flex items-center gap-1 rounded-full bg-[var(--pv-surface-2)] px-2.5 py-1 text-xs"
         >
-          {{ item.name }} <span class="text-slate-400">{{ item.useCount }}</span>
+          {{ item.name }} <span class="muted">{{ item.useCount }}</span>
           <button class="hidden text-rose-500 group-hover:inline" @click="removeTag(item)">×</button>
         </span>
-        <span v-if="!tags.length" class="text-xs text-slate-400">还没有标签</span>
+        <span v-if="!tags.length" class="text-xs muted">还没有标签</span>
       </div>
     </section>
 
     <div v-if="editing" class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" @click.self="editing = null">
-      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 dark:bg-slate-900">
+      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 bg-[var(--pv-surface-2)]">
         <h2 class="text-sm font-semibold">{{ editing.id ? '编辑分区' : '新建分区' }}</h2>
         <div><label class="label">名称</label><input v-model="form.name" class="input" /></div>
         <div><label class="label">标识（用于地址，留空自动生成）</label><input v-model="form.slug" class="input" /></div>

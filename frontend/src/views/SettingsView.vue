@@ -5,6 +5,7 @@ import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
 import { formatTime, fromNow } from '../utils';
 import Icon from '../components/Icon.vue';
+import PageHead from '../components/PageHead.vue';
 
 const store = useAppStore();
 const form = ref({
@@ -185,9 +186,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl space-y-4">
-    <section class="card p-4">
-      <h1 class="text-base font-semibold">个人资料</h1>
+  <div class="space-y-4">
+    <PageHead icon="settings" title="个人设置" subtitle="资料、密码、通知、绑定与登录记录都在这里">
+      <template #actions>
+        <span class="chip text-[11px]">Lv{{ store.user?.level }} · 硬币 {{ store.user?.coins ?? 0 }}</span>
+      </template>
+    </PageHead>
+
+    <div class="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+      <!-- 左侧资料卡 -->
+      <aside class="pv-settings-side">
+        <img v-if="form.avatar" :src="form.avatar" class="h-20 w-20 rounded-2xl object-cover" alt="" />
+        <span v-else class="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-[#6d4aff] to-[#22d3ee] text-2xl font-black text-white">
+          {{ (form.display_name || store.user?.username || '?').slice(0, 1) }}
+        </span>
+        <p class="mt-3 text-sm font-semibold">{{ form.display_name || store.user?.username }}</p>
+        <p class="text-[11px] muted">@{{ store.user?.username }}</p>
+        <p class="mt-2 line-clamp-3 text-[11px] muted">{{ form.bio || '这个人很神秘，什么都没写' }}</p>
+        <div class="mt-4 space-y-1.5 text-[11px] muted">
+          <p class="flex justify-between"><span>经验</span><span>{{ store.user?.exp ?? 0 }}</span></p>
+          <p class="flex justify-between"><span>会员</span><span>{{ store.user?.membershipActive ? '生效中' : '未开通' }}</span></p>
+          <p class="flex justify-between"><span>手机号</span><span>{{ phoneInfo?.bound ? '已绑定' : '未绑定' }}</span></p>
+          <p class="flex justify-between"><span>邮箱</span><span>{{ form.email ? '已填' : '未填' }}</span></p>
+        </div>
+        <RouterLink to="/membership" class="btn-ghost mt-4 w-full justify-center text-xs">会员中心</RouterLink>
+      </aside>
+
+      <div class="space-y-4">
+    <section class="surface p-4">
+      <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="user" :size="17" />个人资料</h2>
       <div class="mt-4 space-y-3">
         <div>
           <label class="label">昵称</label>
@@ -241,7 +268,7 @@ onMounted(() => {
             <option :value="2">女</option>
           </select>
         </div>
-        <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+        <div class="flex flex-wrap gap-4 text-sm muted">
           <label class="flex items-center gap-2"><input v-model="form.is_private" type="checkbox" />隐藏收藏与关注列表</label>
           <label class="flex items-center gap-2"><input v-model="form.allow_message" type="checkbox" />允许别人给我发私信</label>
           <label class="flex items-center gap-2"><input v-model="form.show_email" type="checkbox" />公开邮箱</label>
@@ -252,7 +279,7 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="card p-4">
+    <section class="surface p-4">
       <h2 class="text-base font-semibold">修改密码</h2>
       <div class="mt-4 space-y-3">
         <div><label class="label">原密码</label><input v-model="password.old_password" type="password" class="input" /></div>
@@ -264,17 +291,17 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="card p-4 text-sm">
+    <section class="surface p-4 text-sm">
       <h2 class="text-base font-semibold">账号信息</h2>
       <dl class="mt-3 space-y-2">
-        <div class="flex justify-between"><dt class="text-slate-500">用户名</dt><dd>@{{ store.user?.username }}（{{ store.settings.allow_change_username ? '可修改' : '不可修改' }}）</dd></div>
-        <div class="flex justify-between"><dt class="text-slate-500">硬币</dt><dd>{{ store.user?.coins }}</dd></div>
-        <div class="flex justify-between"><dt class="text-slate-500">注册时间</dt><dd>{{ formatTime(store.user?.createdAt) }}</dd></div>
-        <div class="flex justify-between"><dt class="text-slate-500">最近登录</dt><dd>{{ formatTime(store.user?.lastLoginAt) }}</dd></div>
+        <div class="flex justify-between"><dt class="muted">用户名</dt><dd>@{{ store.user?.username }}（{{ store.settings.allow_change_username ? '可修改' : '不可修改' }}）</dd></div>
+        <div class="flex justify-between"><dt class="muted">硬币</dt><dd>{{ store.user?.coins }}</dd></div>
+        <div class="flex justify-between"><dt class="muted">注册时间</dt><dd>{{ formatTime(store.user?.createdAt) }}</dd></div>
+        <div class="flex justify-between"><dt class="muted">最近登录</dt><dd>{{ formatTime(store.user?.lastLoginAt) }}</dd></div>
       </dl>
     </section>
 
-    <section v-if="mailPref" class="card p-4">
+    <section v-if="mailPref" class="surface p-4">
       <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="mail" :size="17" />邮件通知</h2>
       <p class="mt-2 text-xs muted">
         {{ mailPref.enabled ? `回复、投币、订单等通知可以发送到 ${mailPref.email || '你的邮箱'}。` : '本站暂未开启邮件服务，通知只会出现在站内信里。' }}
@@ -291,7 +318,7 @@ onMounted(() => {
       <p v-if="!mailPref.email" class="mt-2 text-xs text-amber-500">还没有填写邮箱，请先在上方「个人资料」里补上。</p>
     </section>
 
-    <section v-if="bindings?.providers?.length" class="card p-4">
+    <section v-if="bindings?.providers?.length" class="surface p-4">
       <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="key" :size="17" />第三方账号绑定</h2>
       <ul class="mt-3 divide-y divide-[var(--pv-border)] text-sm">
         <li v-for="provider in bindings.providers" :key="provider.id" class="flex items-center gap-3 py-2.5">
@@ -313,7 +340,7 @@ onMounted(() => {
       </ul>
     </section>
 
-    <section class="card p-4 text-sm">
+    <section class="surface p-4 text-sm">
       <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="radio" :size="17" />直播与会员</h2>
       <dl class="mt-3 space-y-2">
         <div class="flex justify-between"><dt class="muted">直播权限</dt><dd>{{ store.user?.canLive ? '已开通' : '未开通（联系管理员）' }}</dd></div>
@@ -326,7 +353,7 @@ onMounted(() => {
       <RouterLink to="/membership" class="btn-ghost mt-3 text-xs">前往会员中心</RouterLink>
     </section>
 
-    <section class="card p-4 text-sm">
+    <section class="surface p-4 text-sm">
       <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="phone" :size="17" />手机号</h2>
       <template v-if="phoneInfo?.bound">
         <div class="mt-3 flex items-center gap-3">
@@ -353,7 +380,7 @@ onMounted(() => {
       </template>
     </section>
 
-    <section class="card p-4 text-sm">
+    <section class="surface p-4 text-sm">
       <h2 class="flex items-center gap-2 text-base font-semibold"><Icon name="clock" :size="17" />登录记录</h2>
       <p class="mt-2 text-xs muted">
         最近 {{ loginLogs.length }} 次登录，共出现过 {{ loginIps }} 个不同 IP。
@@ -375,5 +402,7 @@ onMounted(() => {
       </div>
       <p v-else class="mt-3 text-xs muted">暂时没有登录记录。</p>
     </section>
+      </div>
+    </div>
   </div>
 </template>

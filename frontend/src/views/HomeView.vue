@@ -62,16 +62,16 @@ onUnmounted(() => window.clearInterval(timer));
             ></button>
           </div>
         </template>
-        <div v-else class="grid aspect-[16/7] place-items-center text-slate-500">还没有轮播内容</div>
+        <div v-else class="grid aspect-[16/7] place-items-center muted">还没有轮播内容</div>
       </div>
 
-      <div class="card p-4">
+      <div class="surface p-4">
         <h3 class="text-sm font-semibold">社区数据</h3>
         <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div><div class="text-xl font-bold text-primary">{{ formatNumber(data.stats.users) }}</div><div class="text-xs text-slate-400">注册用户</div></div>
-          <div><div class="text-xl font-bold text-primary">{{ formatNumber(data.stats.videos) }}</div><div class="text-xs text-slate-400">公开视频</div></div>
-          <div><div class="text-xl font-bold text-primary">{{ formatNumber(data.stats.views) }}</div><div class="text-xs text-slate-400">总播放</div></div>
-          <div><div class="text-xl font-bold text-primary">{{ formatNumber(data.stats.danmaku) }}</div><div class="text-xs text-slate-400">弹幕总数</div></div>
+          <div><div class="text-xl font-bold text-[var(--pv-accent)]">{{ formatNumber(data.stats.users) }}</div><div class="text-xs muted">注册用户</div></div>
+          <div><div class="text-xl font-bold text-[var(--pv-accent)]">{{ formatNumber(data.stats.videos) }}</div><div class="text-xs muted">公开视频</div></div>
+          <div><div class="text-xl font-bold text-[var(--pv-accent)]">{{ formatNumber(data.stats.views) }}</div><div class="text-xs muted">总播放</div></div>
+          <div><div class="text-xl font-bold text-[var(--pv-accent)]">{{ formatNumber(data.stats.danmaku) }}</div><div class="text-xs muted">弹幕总数</div></div>
         </div>
         <RouterLink to="/rank" class="btn-ghost mt-4 w-full text-xs">查看完整排行榜</RouterLink>
       </div>
@@ -80,12 +80,12 @@ onUnmounted(() => window.clearInterval(timer));
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
       <div>
         <div class="mb-3 flex items-center gap-3 text-sm">
-          <button :class="tab === 'recommend' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'recommend'">推荐</button>
-          <button :class="tab === 'latest' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'latest'">最新</button>
-          <button :class="tab === 'featured' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'featured'">精选</button>
+          <button :class="tab === 'recommend' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'recommend'">推荐</button>
+          <button :class="tab === 'latest' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'latest'">最新</button>
+          <button :class="tab === 'featured' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'featured'">精选</button>
         </div>
-        <p v-if="loading" class="py-10 text-center text-sm text-slate-400">加载中…</p>
-        <div v-else-if="!(data[tab] || []).length" class="card p-10 text-center text-sm text-slate-400">
+        <p v-if="loading" class="py-10 text-center text-sm muted">加载中…</p>
+        <div v-else-if="!(data[tab] || []).length" class="surface p-10 text-center text-sm muted">
           还没有视频，登录后点击右上角「投稿」发布第一条吧
         </div>
         <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -94,37 +94,37 @@ onUnmounted(() => window.clearInterval(timer));
       </div>
 
       <aside class="space-y-4">
-        <div v-if="store.settings.show_home_ranking !== false" class="card p-4">
+        <div v-if="store.settings.show_home_ranking !== false" class="surface p-4">
           <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="flame" :size="16" class="text-[var(--pv-accent)]" />热门排行</h3>
           <ol class="space-y-2">
             <li v-for="(video, index) in data.ranking" :key="video.id" class="flex gap-2 text-sm">
-              <span class="w-4 shrink-0 text-center text-xs font-semibold" :class="index < 3 ? 'text-primary' : 'text-slate-400'">{{ index + 1 }}</span>
-              <RouterLink :to="`/video/${video.id}`" class="line-clamp-2 flex-1 hover:text-primary">{{ video.title }}</RouterLink>
-              <span class="shrink-0 text-xs text-slate-400">{{ formatNumber(video.views) }}</span>
+              <span class="w-4 shrink-0 text-center text-xs font-semibold" :class="index < 3 ? 'text-[var(--pv-accent)]' : 'muted'">{{ index + 1 }}</span>
+              <RouterLink :to="`/video/${video.id}`" class="line-clamp-2 flex-1 hover:text-[var(--pv-accent)]">{{ video.title }}</RouterLink>
+              <span class="shrink-0 text-xs muted">{{ formatNumber(video.views) }}</span>
             </li>
           </ol>
         </div>
 
-        <div class="card p-4">
+        <div class="surface p-4">
           <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="info" :size="16" class="text-[var(--pv-accent)]" />公告</h3>
           <ul class="space-y-2 text-sm">
             <li v-for="item in data.announcements" :key="item.id">
               <div class="font-medium">{{ item.title }}</div>
-              <p class="mt-0.5 line-clamp-2 text-xs text-slate-500">{{ item.content }}</p>
-              <div class="mt-0.5 text-[11px] text-slate-400">{{ fromNow(item.createdAt) }}</div>
+              <p class="mt-0.5 line-clamp-2 text-xs muted">{{ item.content }}</p>
+              <div class="mt-0.5 text-[11px] muted">{{ fromNow(item.createdAt) }}</div>
             </li>
-            <li v-if="!data.announcements?.length" class="text-xs text-slate-400">暂无公告</li>
+            <li v-if="!data.announcements?.length" class="text-xs muted">暂无公告</li>
           </ul>
         </div>
 
-        <div class="card p-4">
+        <div class="surface p-4">
           <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon name="tag" :size="16" class="text-[var(--pv-accent)]" />热门标签</h3>
           <div class="flex flex-wrap gap-2">
             <RouterLink
               v-for="item in store.hotTags"
               :key="item.id"
               :to="`/search?q=${encodeURIComponent(item.name)}`"
-              class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 hover:bg-primary/10 hover:text-primary dark:bg-slate-800 dark:text-slate-300"
+              class="rounded-full bg-[var(--pv-surface-2)] px-2.5 py-1 text-xs hover:bg-[var(--pv-accent)]/10 hover:text-[var(--pv-accent)] dark:"
             >
               {{ item.name }}
             </RouterLink>

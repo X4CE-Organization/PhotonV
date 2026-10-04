@@ -89,10 +89,10 @@ onMounted(load);
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-base font-semibold">用户管理</h1>
-      <span class="text-sm text-slate-500">共 {{ total }} 位用户</span>
+      <span class="text-sm muted">共 {{ total }} 位用户</span>
     </div>
 
-    <div class="card flex flex-wrap items-center gap-2 p-3">
+    <div class="surface flex flex-wrap items-center gap-2 p-3">
       <input v-model="keyword" class="input !w-56" placeholder="搜索用户名 / 昵称 / 邮箱" @keyup.enter="page = 1; load()" />
       <select v-model="role" class="input !w-32" @change="page = 1; load()">
         <option value="">全部角色</option>
@@ -108,8 +108,8 @@ onMounted(load);
       <button class="btn-ghost" @click="page = 1; load()">查询</button>
     </div>
 
-    <div class="card overflow-x-auto">
-      <p v-if="loading" class="py-10 text-center text-sm text-slate-400">加载中…</p>
+    <div class="surface overflow-x-auto">
+      <p v-if="loading" class="py-10 text-center text-sm muted">加载中…</p>
       <table v-else class="table-base">
         <thead>
           <tr>
@@ -125,32 +125,32 @@ onMounted(load);
         </thead>
         <tbody>
           <tr v-for="user in items" :key="user.id" :class="user.isBanned ? 'opacity-60' : ''">
-            <td class="text-xs text-slate-400">{{ user.id }}</td>
+            <td class="text-xs muted">{{ user.id }}</td>
             <td>
               <div class="flex items-center gap-2">
                 <img v-if="user.avatar" :src="user.avatar" class="h-8 w-8 rounded-full object-cover" alt="" />
-                <span v-else class="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                <span v-else class="grid h-8 w-8 place-items-center rounded-full bg-[var(--pv-accent)]/15 text-xs font-semibold text-[var(--pv-accent)]">
                   {{ initials(user.displayName) }}
                 </span>
                 <div>
                   <span class="text-sm">{{ user.displayName }}</span>
                   <span v-if="user.isBanned" class="ml-2 rounded bg-rose-100 px-1 text-[10px] text-rose-600 dark:bg-rose-500/20">已封禁</span>
-                  <div class="font-mono text-[11px] text-slate-400">@{{ user.username }}</div>
-                  <div class="text-[11px] text-slate-400">{{ user.email || '未填写邮箱' }}</div>
+                  <div class="font-mono text-[11px] muted">@{{ user.username }}</div>
+                  <div class="text-[11px] muted">{{ user.email || '未填写邮箱' }}</div>
                 </div>
               </div>
             </td>
             <td class="text-xs">{{ user.role === 'superadmin' ? '超级管理员' : user.role === 'admin' ? '管理员' : '普通用户' }}</td>
-            <td class="text-primary">{{ user.coins }}</td>
+            <td class="text-[var(--pv-accent)]">{{ user.coins }}</td>
             <td>{{ user.videoCount }}</td>
             <td>{{ formatNumber(user.followerCount) }}</td>
-            <td class="text-xs text-slate-400">
+            <td class="text-xs muted">
               {{ user.lastLoginAt ? fromNow(user.lastLoginAt) : '从未' }}
               <div class="text-[11px]">{{ user.lastLoginIp }}</div>
             </td>
             <td>
               <div class="flex flex-wrap gap-2 text-xs">
-                <button class="text-primary hover:underline" @click="edit(user)">编辑</button>
+                <button class="text-[var(--pv-accent)] hover:underline" @click="edit(user)">编辑</button>
                 <button :class="user.isBanned ? 'text-emerald-600' : 'text-amber-600'" class="hover:underline" @click="toggleBan(user)">
                   {{ user.isBanned ? '解封' : '封禁' }}
                 </button>
@@ -164,7 +164,7 @@ onMounted(load);
     <PaginationBar :page="page" :size="size" :total="total" @change="(value) => { page = value; load(); }" />
 
     <div v-if="editing" class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" @click.self="editing = null">
-      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 dark:bg-slate-900">
+      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 bg-[var(--pv-surface-2)]">
         <h2 class="text-sm font-semibold">编辑用户：{{ editing.username }}</h2>
         <div><label class="label">昵称</label><input v-model="form.displayName" class="input" /></div>
         <div><label class="label">邮箱</label><input v-model="form.email" class="input" /></div>

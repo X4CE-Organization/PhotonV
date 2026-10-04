@@ -5,6 +5,7 @@ import { api } from '../api';
 import { toast } from '../composables/toast';
 import Icon from '../components/Icon.vue';
 import { formatNumber } from '../utils';
+import PageHead from '../components/PageHead.vue';
 
 const items = ref<any[]>([]);
 const loading = ref(true);
@@ -67,10 +68,11 @@ onMounted(load);
 
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="flex items-center gap-2 text-base font-semibold"><Icon name="list" :size="18" />我的合集</h1>
-      <button class="btn-primary text-xs" @click="openCreate">新建合集</button>
-    </div>
+    <PageHead icon="list" title="我的合集" subtitle="把想连着看的视频排成一串，观众能一路播下去">
+      <template #actions>
+        <button class="btn-primary text-xs" @click="openCreate">新建合集</button>
+      </template>
+    </PageHead>
 
     <div v-if="creating" class="surface space-y-2 p-4">
       <input v-model="form.title" class="input" placeholder="合集标题" />

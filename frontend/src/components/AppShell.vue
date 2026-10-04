@@ -138,9 +138,7 @@ onUnmounted(() => {
             :key="item.to"
             :to="item.to"
             class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition"
-            :class="isActive(item.to, (item as any).match)
-              ? 'bg-gradient-to-r from-[#6d4aff]/25 to-transparent font-semibold text-[var(--pv-accent)]'
-              : 'muted hover:bg-[var(--pv-surface-2)] hover:text-[var(--pv-text)]'"
+            :class="isActive(item.to, (item as any).match) ? 'bg-gradient-to-r from-[#6d4aff]/25 to-transparent font-semibold text-[var(--pv-accent)]' : 'muted hover:bg-[var(--pv-surface-2)] hover:text-[var(--pv-text)]'"
           >
             <Icon :name="item.icon" :size="19" />
             <span v-if="!collapsed">{{ item.label }}</span>

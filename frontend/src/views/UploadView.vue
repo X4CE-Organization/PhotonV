@@ -6,6 +6,7 @@ import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
 import { formatDuration, formatSize, fromNow } from '../utils';
 import VideoCard from '../components/VideoCard.vue';
+import PageHead from '../components/PageHead.vue';
 
 const store = useAppStore();
 const router = useRouter();
@@ -162,9 +163,8 @@ onMounted(loadMine);
 <template>
   <div class="grid gap-5 lg:grid-cols-[1fr_360px]">
     <div class="space-y-4">
-      <div class="card p-4">
-        <h1 class="text-base font-semibold">投稿</h1>
-        <p class="mt-1 text-xs text-slate-500">{{ store.settings.video_review_note }}</p>
+      <PageHead icon="upload" title="投稿" :subtitle="String(store.settings.video_review_note || '')" />
+      <div class="surface p-4">
 
         <div class="mt-4 space-y-3">
           <div>
@@ -181,10 +181,10 @@ onMounted(loadMine);
                 {{ uploading ? '上传中…' : '选择视频文件' }}
               </button>
               <span v-if="form.source" class="text-xs text-emerald-600">{{ form.source }} · {{ formatSize(form.filesize) }}</span>
-              <span v-if="uploading" class="text-xs text-slate-400">{{ uploadPercent }}%</span>
+              <span v-if="uploading" class="text-xs muted">{{ uploadPercent }}%</span>
             </div>
-            <div v-if="uploading" class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-              <div class="h-full bg-primary transition-all" :style="{ width: uploadPercent + '%' }"></div>
+            <div v-if="uploading" class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--pv-surface-2)]">
+              <div class="h-full bg-[var(--pv-accent)] transition-all" :style="{ width: uploadPercent + '%' }"></div>
             </div>
           </div>
 
@@ -230,11 +230,11 @@ onMounted(loadMine);
                   @change="(event) => { const file = (event.target as HTMLInputElement).files?.[0]; if (file) pickCover(file); }"
                 />
               </label>
-              <span class="text-xs text-slate-400">不传会自动截取视频画面</span>
+              <span class="text-xs muted">不传会自动截取视频画面</span>
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-4 text-sm text-slate-500">
+          <div class="flex flex-wrap gap-4 text-sm muted">
             <label class="flex items-center gap-2"><input v-model="form.allow_comment" type="checkbox" />允许评论</label>
             <label class="flex items-center gap-2"><input v-model="form.allow_danmaku" type="checkbox" />允许弹幕</label>
             <label class="flex items-center gap-2"><input v-model="form.allow_download" type="checkbox" />允许下载</label>
@@ -243,7 +243,7 @@ onMounted(loadMine);
           <div v-if="store.settings.scheduled_publish_enabled !== false">
             <label class="label">定时发布（可选）</label>
             <input v-model="form.scheduled_at" type="datetime-local" class="input sm:max-w-xs" />
-            <p class="mt-1 text-xs text-slate-400">
+            <p class="mt-1 text-xs muted">
               留空就按正常流程发布。填了时间的话，到点会自动公开，最多支持 30 天内。
             </p>
           </div>
@@ -258,7 +258,7 @@ onMounted(loadMine);
       </div>
     </div>
 
-    <aside class="card p-4">
+    <aside class="surface p-4">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold">我的投稿</h2>
         <select v-model="statusFilter" class="input !w-28 !py-1 text-xs" @change="loadMine">
@@ -270,24 +270,24 @@ onMounted(loadMine);
         </select>
       </div>
       <ul class="mt-3 space-y-3">
-        <li v-for="video in myVideos" :key="video.id" class="rounded-lg border border-slate-100 p-2 dark:border-slate-800">
+        <li v-for="video in myVideos" :key="video.id" class="rounded-lg border border-[var(--pv-border)] p-2">
           <div class="flex gap-2">
             <img :src="video.cover" class="h-12 w-20 shrink-0 rounded object-cover" alt="" />
             <div class="min-w-0 flex-1">
-              <RouterLink :to="`/video/${video.id}`" class="line-clamp-2 text-xs font-medium hover:text-primary">{{ video.title }}</RouterLink>
-              <p class="mt-0.5 text-[11px] text-slate-400">
+              <RouterLink :to="`/video/${video.id}`" class="line-clamp-2 text-xs font-medium hover:text-[var(--pv-accent)]">{{ video.title }}</RouterLink>
+              <p class="mt-0.5 text-[11px] muted">
                 {{ video.status === 'published' ? '已公开' : video.status === 'pending' ? '审核中' : video.status === 'rejected' ? '未通过' : '仅自己' }}
                 · {{ formatDuration(video.duration) }} · {{ fromNow(video.createdAt) }}
               </p>
             </div>
           </div>
           <div class="mt-1.5 flex gap-2 text-[11px]">
-            <button v-if="video.status !== 'published'" class="text-primary" @click="setStatus(video, 'published')">设为公开</button>
-            <button v-if="video.status !== 'private'" class="text-slate-500" @click="setStatus(video, 'private')">设为私密</button>
+            <button v-if="video.status !== 'published'" class="text-[var(--pv-accent)]" @click="setStatus(video, 'published')">设为公开</button>
+            <button v-if="video.status !== 'private'" class="muted" @click="setStatus(video, 'private')">设为私密</button>
             <button class="text-rose-500" @click="removeVideo(video)">删除</button>
           </div>
         </li>
-        <li v-if="!myVideos.length" class="py-6 text-center text-xs text-slate-400">还没有投稿</li>
+        <li v-if="!myVideos.length" class="py-6 text-center text-xs muted">还没有投稿</li>
       </ul>
     </aside>
   </div>

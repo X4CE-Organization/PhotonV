@@ -241,12 +241,12 @@ onBeforeUnmount(() => {
 
   <div class="mt-3 flex flex-wrap items-center gap-2">
     <div class="flex min-w-[220px] flex-1 items-center gap-2">
-      <span class="text-xs text-slate-400">{{ formatDuration(current) }} / {{ formatDuration(duration || video.duration) }}</span>
-      <div class="h-1.5 flex-1 cursor-pointer rounded-full bg-slate-200 dark:bg-slate-700" @click="seek">
-        <div class="h-full rounded-full bg-primary" :style="{ width: progressPercent + '%' }"></div>
+      <span class="text-xs muted">{{ formatDuration(current) }} / {{ formatDuration(duration || video.duration) }}</span>
+      <div class="h-1.5 flex-1 cursor-pointer rounded-full bg-[var(--pv-surface-2)]" @click="seek">
+        <div class="h-full rounded-full bg-[var(--pv-accent)]" :style="{ width: progressPercent + '%' }"></div>
       </div>
     </div>
-    <label class="flex items-center gap-1 text-xs text-slate-500">
+    <label class="flex items-center gap-1 text-xs muted">
       <input v-model="showDanmaku" type="checkbox" :disabled="!allowDanmaku" />
       弹幕
     </label>
@@ -271,7 +271,7 @@ onBeforeUnmount(() => {
     <a v-if="video.allowDownload && video.source" :href="video.source" download class="btn-ghost !px-2 !py-1 text-xs">下载</a>
   </div>
 
-  <div v-if="showSettings" class="mt-2 flex flex-wrap items-center gap-3 rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800/60">
+  <div v-if="showSettings" class="mt-2 flex flex-wrap items-center gap-3 rounded-xl bg-[var(--pv-surface-2)] p-3 text-xs">
     <label class="flex items-center gap-1">不透明度
       <input v-model.number="opacity" type="range" min="0.1" max="1" step="0.05" />
     </label>
@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
       <option value="bottom">底部</option>
     </select>
     <span>颜色：</span>
-    <input v-model="color" type="color" class="h-7 w-10 rounded border border-slate-200 bg-white" />
+    <input v-model="color" type="color" class="h-7 w-10 rounded border border-[var(--pv-border)] bg-white" />
   </div>
 
   <div class="mt-2 flex items-center gap-2">

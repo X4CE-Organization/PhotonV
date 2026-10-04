@@ -42,19 +42,19 @@ onMounted(load);
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-base font-semibold">系统日志</h1>
       <div class="flex gap-2 text-sm">
-        <button :class="tab === 'audit' ? 'font-semibold text-primary' : 'text-slate-500'" @click="switchTab('audit')">操作日志</button>
-        <button :class="tab === 'login' ? 'font-semibold text-primary' : 'text-slate-500'" @click="switchTab('login')">登录日志</button>
+        <button :class="tab === 'audit' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="switchTab('audit')">操作日志</button>
+        <button :class="tab === 'login' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="switchTab('login')">登录日志</button>
       </div>
     </div>
 
-    <div v-if="tab === 'audit'" class="card flex items-center gap-2 p-3">
+    <div v-if="tab === 'audit'" class="surface flex items-center gap-2 p-3">
       <input v-model="keyword" class="input !w-64" placeholder="搜索操作或操作人" @keyup.enter="page = 1; load()" />
       <button class="btn-ghost" @click="page = 1; load()">查询</button>
-      <span class="ml-auto text-xs text-slate-400">共 {{ total }} 条</span>
+      <span class="ml-auto text-xs muted">共 {{ total }} 条</span>
     </div>
 
-    <div class="card overflow-x-auto">
-      <p v-if="loading" class="py-10 text-center text-sm text-slate-400">加载中…</p>
+    <div class="surface overflow-x-auto">
+      <p v-if="loading" class="py-10 text-center text-sm muted">加载中…</p>
       <table v-else-if="tab === 'audit'" class="table-base">
         <thead>
           <tr>
@@ -64,13 +64,13 @@ onMounted(load);
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td class="text-xs text-slate-400">{{ item.id }}</td>
+            <td class="text-xs muted">{{ item.id }}</td>
             <td class="text-xs">{{ item.actor }}</td>
             <td class="font-mono text-xs">{{ item.action }}</td>
-            <td class="text-xs text-slate-500">{{ item.targetType }}{{ item.targetId ? ` #${item.targetId}` : '' }}</td>
-            <td class="text-xs text-slate-400">{{ item.detail }}</td>
-            <td class="text-xs text-slate-400">{{ item.ip }}</td>
-            <td class="text-xs text-slate-400">{{ fromNow(item.createdAt) }}</td>
+            <td class="text-xs muted">{{ item.targetType }}{{ item.targetId ? ` #${item.targetId}` : '' }}</td>
+            <td class="text-xs muted">{{ item.detail }}</td>
+            <td class="text-xs muted">{{ item.ip }}</td>
+            <td class="text-xs muted">{{ fromNow(item.createdAt) }}</td>
           </tr>
         </tbody>
       </table>
@@ -83,12 +83,12 @@ onMounted(load);
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td class="text-xs text-slate-400">{{ item.id }}</td>
+            <td class="text-xs muted">{{ item.id }}</td>
             <td class="text-xs">{{ item.username }}</td>
-            <td class="text-xs text-slate-400">{{ item.ip }}</td>
-            <td class="truncate text-xs text-slate-400">{{ item.userAgent }}</td>
+            <td class="text-xs muted">{{ item.ip }}</td>
+            <td class="truncate text-xs muted">{{ item.userAgent }}</td>
             <td class="text-xs" :class="item.success ? 'text-emerald-600' : 'text-rose-500'">{{ item.success ? '成功' : '失败' }}</td>
-            <td class="text-xs text-slate-400">{{ fromNow(item.createdAt) }}</td>
+            <td class="text-xs muted">{{ fromNow(item.createdAt) }}</td>
           </tr>
         </tbody>
       </table>

@@ -87,7 +87,7 @@ onMounted(load);
       <span class="text-xs muted">累计收入 ¥{{ ((stats.revenueCents || 0) / 100).toFixed(2) }} · 待处理 {{ stats.pending || 0 }} · 已支付 {{ stats.paid || 0 }}</span>
     </div>
 
-    <div class="card flex flex-wrap items-center gap-2 p-3">
+    <div class="surface flex flex-wrap items-center gap-2 p-3">
       <select v-model="status" class="input !w-32" @change="page = 1; load()">
         <option value="pending">待处理</option>
         <option value="paid">已支付</option>

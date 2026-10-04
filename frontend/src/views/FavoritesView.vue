@@ -5,6 +5,7 @@ import { toast } from '../composables/toast';
 import { useAppStore } from '../store';
 import VideoCard from '../components/VideoCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
+import PageHead from '../components/PageHead.vue';
 
 const store = useAppStore();
 const folders = ref<any[]>([]);
@@ -62,15 +63,16 @@ onMounted(load);
 
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-base font-semibold">我的收藏</h1>
-      <button class="btn-ghost text-xs" @click="creating = !creating">新建收藏夹</button>
-    </div>
+    <PageHead icon="bookmark" title="我的收藏" subtitle="把喜欢的视频分门别类，也可以只给自己看">
+      <template #actions>
+        <button class="btn-ghost text-xs" @click="creating = !creating">新建收藏夹</button>
+      </template>
+    </PageHead>
 
-    <div v-if="creating" class="card space-y-2 p-4">
+    <div v-if="creating" class="surface space-y-2 p-4">
       <input v-model="newFolder.name" class="input" placeholder="收藏夹名称" />
       <input v-model="newFolder.description" class="input" placeholder="简介（可选）" />
-      <label class="flex items-center gap-2 text-sm text-slate-500">
+      <label class="flex items-center gap-2 text-sm muted">
         <input v-model="newFolder.is_public" type="checkbox" />公开可见
       </label>
       <div class="flex justify-end gap-2">
@@ -84,17 +86,17 @@ onMounted(load);
         v-for="folder in folders"
         :key="folder.id"
         class="group flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
-        :class="active === folder.id ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
+        :class="active === folder.id ? 'border-[var(--pv-accent)] bg-[var(--pv-accent)]/10 text-[var(--pv-accent)]' : 'border border-[var(--pv-border)] dark:'"
         @click="active = folder.id; page = 1; load()"
       >
         {{ folder.name }}
-        <span class="text-xs text-slate-400">{{ folder.count }}</span>
+        <span class="text-xs muted">{{ folder.count }}</span>
         <span v-if="!folder.isDefault" class="hidden text-xs text-rose-500 group-hover:inline" @click.stop="removeFolder(folder)">删除</span>
       </button>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sm text-slate-400">加载中…</p>
-    <p v-else-if="!items.length" class="card p-16 text-center text-sm text-slate-400">这个收藏夹还是空的</p>
+    <p v-if="loading" class="py-16 text-center text-sm muted">加载中…</p>
+    <p v-else-if="!items.length" class="surface p-16 text-center text-sm muted">这个收藏夹还是空的</p>
     <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
       <VideoCard v-for="video in items" :key="video.id" :video="video" />
     </div>

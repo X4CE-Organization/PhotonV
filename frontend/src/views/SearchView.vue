@@ -69,36 +69,36 @@ onMounted(() => {
 
 <template>
   <div class="space-y-4">
-    <form class="card flex gap-2 p-3" @submit.prevent="submit">
+    <form class="surface flex gap-2 p-3" @submit.prevent="submit">
       <input v-model="keyword" class="input flex-1" placeholder="搜索视频、用户" />
       <button class="btn-primary">搜索</button>
     </form>
 
-    <div v-if="hot.length" class="card p-3">
-      <div class="mb-2 flex items-center gap-2 text-xs text-slate-400">
+    <div v-if="hot.length" class="surface p-3">
+      <div class="mb-2 flex items-center gap-2 text-xs muted">
         <Icon name="flame" :size="14" />热搜
       </div>
       <div class="flex flex-wrap gap-2">
         <button
           v-for="(item, index) in hot"
           :key="item.keyword"
-          class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-600 hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-300"
+          class="rounded-lg border border-[var(--pv-border)] px-2.5 py-1 text-xs hover:border-[var(--pv-accent)] hover:text-[var(--pv-accent)] dark:"
           @click="searchFor(item.keyword)"
         >
-          <span class="mr-1 text-slate-400">{{ index + 1 }}</span>{{ item.keyword }}
+          <span class="mr-1 muted">{{ index + 1 }}</span>{{ item.keyword }}
         </button>
       </div>
     </div>
 
     <div class="flex gap-4 text-sm">
-      <button :class="tab === 'video' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'video'; load()">视频</button>
-      <button :class="tab === 'user' ? 'font-semibold text-primary' : 'text-slate-500'" @click="tab = 'user'; load()">用户</button>
+      <button :class="tab === 'video' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'video'; load()">视频</button>
+      <button :class="tab === 'user' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'user'; load()">用户</button>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sm text-slate-400">搜索中…</p>
+    <p v-if="loading" class="py-16 text-center text-sm muted">搜索中…</p>
 
     <template v-else-if="tab === 'video'">
-      <p v-if="!videos.length" class="card p-16 text-center text-sm text-slate-400">没有找到相关视频</p>
+      <p v-if="!videos.length" class="surface p-16 text-center text-sm muted">没有找到相关视频</p>
       <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <VideoCard v-for="video in videos" :key="video.id" :video="video" />
       </div>
@@ -106,22 +106,22 @@ onMounted(() => {
     </template>
 
     <template v-else>
-      <p v-if="!users.length" class="card p-16 text-center text-sm text-slate-400">没有找到相关用户</p>
+      <p v-if="!users.length" class="surface p-16 text-center text-sm muted">没有找到相关用户</p>
       <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <RouterLink
           v-for="user in users"
           :key="user.id"
           :to="`/space/${user.username}`"
-          class="card flex items-center gap-3 p-3 hover:shadow-md"
+          class="surface flex items-center gap-3 p-3 hover:shadow-md"
         >
           <img v-if="user.avatar" :src="user.avatar" class="h-12 w-12 rounded-full object-cover" alt="" />
-          <span v-else class="grid h-12 w-12 place-items-center rounded-full bg-primary/15 font-semibold text-primary">
+          <span v-else class="grid h-12 w-12 place-items-center rounded-full bg-[var(--pv-accent)]/15 font-semibold text-[var(--pv-accent)]">
             {{ initials(user.displayName) }}
           </span>
           <div class="min-w-0">
             <div class="font-medium">{{ user.displayName }}</div>
-            <p class="line-clamp-1 text-xs text-slate-500">{{ user.bio || '这个人很神秘' }}</p>
-            <p class="mt-0.5 text-[11px] text-slate-400">{{ formatNumber(user.followerCount) }} 粉丝 · {{ user.videoCount }} 投稿</p>
+            <p class="line-clamp-1 text-xs muted">{{ user.bio || '这个人很神秘' }}</p>
+            <p class="mt-0.5 text-[11px] muted">{{ formatNumber(user.followerCount) }} 粉丝 · {{ user.videoCount }} 投稿</p>
           </div>
         </RouterLink>
       </div>

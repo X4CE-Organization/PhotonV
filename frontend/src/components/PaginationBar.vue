@@ -22,12 +22,12 @@ const list = computed(() => {
       v-for="item in list"
       :key="item"
       class="btn !px-3 !py-1"
-      :class="item === page ? 'bg-primary text-white' : 'border border-slate-200 dark:border-slate-700'"
+      :class="item === page ? 'bg-[var(--pv-accent)] text-white' : 'border border border-[var(--pv-border)]'"
       @click="emit('change', item)"
     >
       {{ item }}
     </button>
     <button class="btn-ghost !px-2 !py-1" :disabled="page >= pages" @click="emit('change', page + 1)">下一页</button>
-    <span class="ml-2 text-xs text-slate-400">共 {{ total }} 条</span>
+    <span class="ml-2 text-xs muted">共 {{ total }} 条</span>
   </div>
 </template>

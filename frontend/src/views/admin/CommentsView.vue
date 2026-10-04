@@ -50,19 +50,19 @@ onMounted(load);
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h1 class="text-base font-semibold">评论与弹幕</h1>
       <div class="flex gap-2 text-sm">
-        <button :class="tab === 'comments' ? 'font-semibold text-primary' : 'text-slate-500'" @click="switchTab('comments')">评论</button>
-        <button :class="tab === 'danmaku' ? 'font-semibold text-primary' : 'text-slate-500'" @click="switchTab('danmaku')">弹幕</button>
+        <button :class="tab === 'comments' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="switchTab('comments')">评论</button>
+        <button :class="tab === 'danmaku' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="switchTab('danmaku')">弹幕</button>
       </div>
     </div>
 
-    <div class="card flex items-center gap-2 p-3">
+    <div class="surface flex items-center gap-2 p-3">
       <input v-model="keyword" class="input !w-64" placeholder="搜索内容" @keyup.enter="page = 1; load()" />
       <button class="btn-ghost" @click="page = 1; load()">查询</button>
-      <span class="ml-auto text-xs text-slate-400">共 {{ total }} 条</span>
+      <span class="ml-auto text-xs muted">共 {{ total }} 条</span>
     </div>
 
-    <div class="card overflow-x-auto">
-      <p v-if="loading" class="py-10 text-center text-sm text-slate-400">加载中…</p>
+    <div class="surface overflow-x-auto">
+      <p v-if="loading" class="py-10 text-center text-sm muted">加载中…</p>
       <table v-else class="table-base">
         <thead>
           <tr>
@@ -81,13 +81,13 @@ onMounted(load);
               <span v-if="item.color" class="ml-2" :style="{ color: item.color }">●</span>
             </td>
             <td class="text-xs">
-              <RouterLink :to="`/space/${item.user?.username}`" class="hover:text-primary">{{ item.user?.displayName }}</RouterLink>
+              <RouterLink :to="`/space/${item.user?.username}`" class="hover:text-[var(--pv-accent)]">{{ item.user?.displayName }}</RouterLink>
             </td>
             <td class="text-xs">
-              <RouterLink :to="`/video/${item.videoId}`" class="line-clamp-1 hover:text-primary">{{ item.videoTitle || `#${item.videoId}` }}</RouterLink>
+              <RouterLink :to="`/video/${item.videoId}`" class="line-clamp-1 hover:text-[var(--pv-accent)]">{{ item.videoTitle || `#${item.videoId}` }}</RouterLink>
             </td>
-            <td class="text-xs text-slate-400">{{ item.time !== undefined ? `${Number(item.time).toFixed(1)}s` : '—' }}</td>
-            <td class="text-xs text-slate-400">{{ fromNow(item.createdAt) }}</td>
+            <td class="text-xs muted">{{ item.time !== undefined ? `${Number(item.time).toFixed(1)}s` : '—' }}</td>
+            <td class="text-xs muted">{{ fromNow(item.createdAt) }}</td>
             <td><button class="text-xs text-rose-500 hover:underline" @click="remove(item)">删除</button></td>
           </tr>
         </tbody>

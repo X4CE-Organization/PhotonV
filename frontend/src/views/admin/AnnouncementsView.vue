@@ -52,25 +52,25 @@ onMounted(load);
       <button class="btn-primary text-xs" @click="openCreate">新建公告</button>
     </div>
 
-    <div class="card divide-y divide-slate-100 dark:divide-slate-800">
+    <div class="surface divide-y divide-[var(--pv-border)]">
       <div v-for="item in items" :key="item.id" class="p-4">
         <div class="flex flex-wrap items-center gap-2">
           <h3 class="text-sm font-medium">{{ item.title }}</h3>
           <span v-if="item.isPinned" class="rounded bg-rose-100 px-1 text-[10px] text-rose-600 dark:bg-rose-500/20">置顶</span>
           <span v-if="!item.isPublic" class="text-[11px] text-amber-500">未公开</span>
-          <span class="ml-auto text-[11px] text-slate-400">{{ fromNow(item.createdAt) }}</span>
+          <span class="ml-auto text-[11px] muted">{{ fromNow(item.createdAt) }}</span>
         </div>
-        <p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ item.content }}</p>
+        <p class="mt-1 line-clamp-2 text-xs muted">{{ item.content }}</p>
         <div class="mt-2 flex gap-3 text-xs">
-          <button class="text-primary hover:underline" @click="openEdit(item)">编辑</button>
+          <button class="text-[var(--pv-accent)] hover:underline" @click="openEdit(item)">编辑</button>
           <button class="text-rose-500 hover:underline" @click="remove(item)">删除</button>
         </div>
       </div>
-      <p v-if="!items.length" class="p-10 text-center text-sm text-slate-400">还没有公告</p>
+      <p v-if="!items.length" class="p-10 text-center text-sm muted">还没有公告</p>
     </div>
 
     <div v-if="editing" class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" @click.self="editing = null">
-      <div class="w-full max-w-lg space-y-3 rounded-xl bg-white p-5 dark:bg-slate-900">
+      <div class="w-full max-w-lg space-y-3 rounded-xl bg-white p-5 bg-[var(--pv-surface-2)]">
         <h2 class="text-sm font-semibold">{{ editing.id ? '编辑公告' : '新建公告' }}</h2>
         <div><label class="label">标题</label><input v-model="form.title" class="input" /></div>
         <div><label class="label">内容</label><textarea v-model="form.content" class="input min-h-[120px]"></textarea></div>

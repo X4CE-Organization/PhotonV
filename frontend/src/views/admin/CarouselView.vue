@@ -58,25 +58,25 @@ onMounted(load);
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      <div v-for="item in items" :key="item.id" class="card overflow-hidden">
+      <div v-for="item in items" :key="item.id" class="surface overflow-hidden">
         <img :src="item.image" class="aspect-[16/7] w-full object-cover" alt="" />
         <div class="p-3">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-medium">{{ item.title || '未命名' }}</h3>
             <span v-if="!item.isActive" class="text-[11px] text-amber-500">已停用</span>
           </div>
-          <p class="mt-1 text-xs text-slate-500">{{ item.subtitle }}</p>
+          <p class="mt-1 text-xs muted">{{ item.subtitle }}</p>
           <div class="mt-2 flex gap-3 text-xs">
-            <button class="text-primary hover:underline" @click="openEdit(item)">编辑</button>
+            <button class="text-[var(--pv-accent)] hover:underline" @click="openEdit(item)">编辑</button>
             <button class="text-rose-500 hover:underline" @click="remove(item)">删除</button>
           </div>
         </div>
       </div>
-      <p v-if="!items.length" class="card col-span-full p-10 text-center text-sm text-slate-400">还没有轮播图</p>
+      <p v-if="!items.length" class="surface col-span-full p-10 text-center text-sm muted">还没有轮播图</p>
     </div>
 
     <div v-if="editing" class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" @click.self="editing = null">
-      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 dark:bg-slate-900">
+      <div class="w-full max-w-md space-y-3 rounded-xl bg-white p-5 bg-[var(--pv-surface-2)]">
         <h2 class="text-sm font-semibold">{{ editing.id ? '编辑轮播' : '新增轮播' }}</h2>
         <div><label class="label">标题</label><input v-model="form.title" class="input" /></div>
         <div><label class="label">副标题</label><input v-model="form.subtitle" class="input" /></div>

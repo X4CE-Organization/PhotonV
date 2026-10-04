@@ -5,6 +5,7 @@ import { api, query } from '../api';
 import { useAppStore } from '../store';
 import VideoCard from '../components/VideoCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
+import PageHead from '../components/PageHead.vue';
 
 const route = useRoute();
 const store = useAppStore();
@@ -46,22 +47,18 @@ onMounted(load);
 
 <template>
   <div class="space-y-4">
-    <div class="card flex flex-wrap items-center justify-between gap-3 p-4">
-      <div>
-        <h1 class="text-base font-semibold">
-          {{ store.categories.find((item) => item.slug === route.params.slug)?.icon }}
-          {{ store.categories.find((item) => item.slug === route.params.slug)?.name || '分区' }}
-        </h1>
-        <p class="mt-1 text-xs text-slate-500">
-          {{ store.categories.find((item) => item.slug === route.params.slug)?.description }}
-        </p>
-      </div>
+    <div class="space-y-3">
+      <PageHead
+        icon="compass"
+        :title="store.categories.find((item) => item.slug === route.params.slug)?.name || '分区'"
+        :subtitle="store.categories.find((item) => item.slug === route.params.slug)?.description"
+      />
       <div class="flex flex-wrap gap-2 text-sm">
         <button
           v-for="item in SORTS"
           :key="item.key"
           class="rounded-lg px-3 py-1.5"
-          :class="sort === item.key ? 'bg-primary/10 font-medium text-primary' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+          :class="sort === item.key ? 'bg-[var(--pv-accent)]/10 font-medium text-[var(--pv-accent)]' : 'muted hover:bg-[var(--pv-surface-2)]'"
           @click="sort = item.key"
         >
           {{ item.label }}
@@ -69,8 +66,8 @@ onMounted(load);
       </div>
     </div>
 
-    <p v-if="loading" class="py-16 text-center text-sm text-slate-400">加载中…</p>
-    <div v-else-if="!items.length" class="card p-16 text-center text-sm text-slate-400">这个分区还没有视频</div>
+    <p v-if="loading" class="py-16 text-center text-sm muted">加载中…</p>
+    <div v-else-if="!items.length" class="surface p-16 text-center text-sm muted">这个分区还没有视频</div>
     <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
       <VideoCard v-for="video in items" :key="video.id" :video="video" />
     </div>

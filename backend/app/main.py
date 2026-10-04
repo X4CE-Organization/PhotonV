@@ -42,7 +42,7 @@ from .routers import (
     ws,
 )
 
-app = FastAPI(title="PhotonV API", version="1.4.2", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="PhotonV API", version="1.4.3", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 app.add_middleware(
     CORSMiddleware,
@@ -120,7 +120,7 @@ async def validation_error(_request: Request, exc: RequestValidationError):
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.4.2"}
+    return {"ok": True, "name": site.get_str("site_name", "PhotonV"), "version": "1.4.3"}
 
 
 for module in (

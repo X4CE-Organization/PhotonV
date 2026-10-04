@@ -105,9 +105,9 @@ onMounted(load);
 </script>
 
 <template>
-  <p v-if="loading" class="py-20 text-center text-sm text-slate-400">加载中…</p>
+  <p v-if="loading" class="py-20 text-center text-sm muted">加载中…</p>
   <div v-else-if="data" class="space-y-4">
-    <div class="card overflow-hidden">
+    <div class="surface overflow-hidden">
       <div
         class="h-32 bg-gradient-to-r from-primary/60 to-indigo-500/60"
         :style="data.banner ? { backgroundImage: `url(${data.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}"
@@ -116,19 +116,19 @@ onMounted(load);
         <img
           v-if="data.avatar"
           :src="data.avatar"
-          class="-mt-10 h-20 w-20 rounded-full border-4 border-white object-cover dark:border-slate-900"
+          class="-mt-10 h-20 w-20 rounded-full border-4 border-white object-cover"
           alt=""
         />
         <span
           v-else
-          class="-mt-10 grid h-20 w-20 place-items-center rounded-full border-4 border-white bg-primary/15 text-2xl font-semibold text-primary dark:border-slate-900"
+          class="-mt-10 grid h-20 w-20 place-items-center rounded-full border-4 border-white bg-[var(--pv-accent)]/15 text-2xl font-semibold text-[var(--pv-accent)]"
         >
           {{ initials(data.displayName) }}
         </span>
         <div class="flex-1">
           <h1 class="text-lg font-semibold">{{ data.displayName }}</h1>
-          <p class="text-xs text-slate-400">@{{ data.username }} · 加入于 {{ fromNow(data.joinedAt) }}</p>
-          <p class="mt-1 text-sm text-slate-500">{{ data.bio || '这个人很神秘，什么都没写' }}</p>
+          <p class="text-xs muted">@{{ data.username }} · 加入于 {{ fromNow(data.joinedAt) }}</p>
+          <p class="mt-1 text-sm muted">{{ data.bio || '这个人很神秘，什么都没写' }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <RouterLink v-if="isSelf()" to="/settings" class="btn-ghost text-xs">编辑资料</RouterLink>
@@ -143,14 +143,14 @@ onMounted(load);
           </template>
         </div>
       </div>
-      <div class="flex flex-wrap gap-6 border-t border-slate-100 px-4 py-3 text-sm dark:border-slate-800">
-        <button class="hover:text-primary" @click="switchTab('videos')"><b>{{ data.videoCount }}</b> <span class="text-xs text-slate-400">投稿</span></button>
-        <button class="hover:text-primary" @click="switchTab('followers')"><b>{{ data.followers }}</b> <span class="text-xs text-slate-400">粉丝</span></button>
-        <button class="hover:text-primary" @click="switchTab('following')"><b>{{ data.following }}</b> <span class="text-xs text-slate-400">关注</span></button>
-        <button class="hover:text-primary" @click="switchTab('playlists')"><Icon name="list" :size="13" /> <span class="text-xs text-slate-400">合集</span></button>
-        <span><b>{{ formatNumber(data.playCount) }}</b> <span class="text-xs text-slate-400">总播放</span></span>
-        <span><b>{{ formatNumber(data.likeCount) }}</b> <span class="text-xs text-slate-400">获赞</span></span>
-        <span v-if="level" class="ml-auto text-xs text-slate-400">
+      <div class="flex flex-wrap gap-6 border-t border border-[var(--pv-border)] px-4 py-3 text-sm">
+        <button class="hover:text-[var(--pv-accent)]" @click="switchTab('videos')"><b>{{ data.videoCount }}</b> <span class="text-xs muted">投稿</span></button>
+        <button class="hover:text-[var(--pv-accent)]" @click="switchTab('followers')"><b>{{ data.followers }}</b> <span class="text-xs muted">粉丝</span></button>
+        <button class="hover:text-[var(--pv-accent)]" @click="switchTab('following')"><b>{{ data.following }}</b> <span class="text-xs muted">关注</span></button>
+        <button class="hover:text-[var(--pv-accent)]" @click="switchTab('playlists')"><Icon name="list" :size="13" /> <span class="text-xs muted">合集</span></button>
+        <span><b>{{ formatNumber(data.playCount) }}</b> <span class="text-xs muted">总播放</span></span>
+        <span><b>{{ formatNumber(data.likeCount) }}</b> <span class="text-xs muted">获赞</span></span>
+        <span v-if="level" class="ml-auto text-xs muted">
           {{ level.name }} · {{ level.current }}/{{ level.next }} 经验
         </span>
       </div>
@@ -168,14 +168,14 @@ onMounted(load);
           ]"
           :key="item.key"
           class="rounded-lg px-3 py-1.5"
-          :class="status === item.key ? 'bg-primary/10 font-medium text-primary' : 'text-slate-500'"
+          :class="status === item.key ? 'bg-[var(--pv-accent)]/10 font-medium text-[var(--pv-accent)]' : 'muted'"
           @click="status = item.key; page = 1; load()"
         >
           {{ item.label }}
         </button>
       </div>
 
-      <p v-if="!items.length" class="card p-16 text-center text-sm text-slate-400">还没有投稿</p>
+      <p v-if="!items.length" class="surface p-16 text-center text-sm muted">还没有投稿</p>
       <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <VideoCard v-for="video in items" :key="video.id" :video="video" />
       </div>
@@ -183,20 +183,20 @@ onMounted(load);
     </template>
 
     <template v-else-if="tab === 'playlists'">
-      <p v-if="!playlists.length" class="card p-16 text-center text-sm text-slate-400">还没有公开的合集</p>
+      <p v-if="!playlists.length" class="surface p-16 text-center text-sm muted">还没有公开的合集</p>
       <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <RouterLink
           v-for="item in playlists"
           :key="item.id"
           :to="`/playlist/${item.id}`"
-          class="card overflow-hidden hover:shadow-md"
+          class="surface overflow-hidden hover:shadow-md"
         >
           <img v-if="item.cover" :src="item.cover" class="h-28 w-full object-cover" alt="" />
-          <div v-else class="grid h-28 w-full place-items-center bg-primary/5 text-xs text-slate-400">暂无封面</div>
+          <div v-else class="grid h-28 w-full place-items-center bg-[var(--pv-accent)]/5 text-xs muted">暂无封面</div>
           <div class="space-y-1 p-3">
             <div class="line-clamp-1 text-sm font-medium">{{ item.title }}</div>
-            <p class="line-clamp-2 text-xs text-slate-400">{{ item.description || '暂无简介' }}</p>
-            <p class="text-[11px] text-slate-400">{{ item.videoCount }} 个视频</p>
+            <p class="line-clamp-2 text-xs muted">{{ item.description || '暂无简介' }}</p>
+            <p class="text-[11px] muted">{{ item.videoCount }} 个视频</p>
           </div>
         </RouterLink>
       </div>
@@ -207,18 +207,18 @@ onMounted(load);
         v-for="user in follows"
         :key="user.id"
         :to="`/space/${user.username}`"
-        class="card flex items-center gap-3 p-3 hover:shadow-md"
+        class="surface flex items-center gap-3 p-3 hover:shadow-md"
       >
         <img v-if="user.avatar" :src="user.avatar" class="h-11 w-11 rounded-full object-cover" alt="" />
-        <span v-else class="grid h-11 w-11 place-items-center rounded-full bg-primary/15 font-semibold text-primary">
+        <span v-else class="grid h-11 w-11 place-items-center rounded-full bg-[var(--pv-accent)]/15 font-semibold text-[var(--pv-accent)]">
           {{ initials(user.displayName) }}
         </span>
         <div class="min-w-0">
           <div class="text-sm font-medium">{{ user.displayName }}</div>
-          <p class="text-xs text-slate-400">{{ formatNumber(user.followerCount) }} 粉丝</p>
+          <p class="text-xs muted">{{ formatNumber(user.followerCount) }} 粉丝</p>
         </div>
       </RouterLink>
-      <p v-if="!follows.length" class="col-span-full py-10 text-center text-sm text-slate-400">暂无数据</p>
+      <p v-if="!follows.length" class="col-span-full py-10 text-center text-sm muted">暂无数据</p>
     </div>
 
     <div v-if="showCharge" class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" @click.self="showCharge = false">
