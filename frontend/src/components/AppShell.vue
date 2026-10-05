@@ -176,7 +176,7 @@ onUnmounted(() => {
             </button>
             <RouterLink to="/" class="flex items-center gap-2 lg:hidden">
               <span class="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[#6d4aff] to-[#22d3ee] text-xs font-black text-white">P</span>
-              <span class="font-bold">{{ store.siteName }}</span>
+              <span class="pv-brand-name font-bold">{{ store.siteName }}</span>
             </RouterLink>
 
             <form class="relative ml-auto hidden max-w-xl flex-1 md:block" @submit.prevent="submit">
@@ -192,7 +192,8 @@ onUnmounted(() => {
                 <Icon name="bell" :size="19" />
                 <span v-if="store.unread > 0" class="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-rose-500"></span>
               </RouterLink>
-              <RouterLink v-if="store.isLogin" to="/upload" class="btn-primary !px-3 !py-1.5 text-xs">
+              <!-- 窄屏放不下，投稿入口在侧边栏和底栏都有 -->
+              <RouterLink v-if="store.isLogin" to="/upload" class="btn-primary hidden !px-3 !py-1.5 text-xs sm:inline-flex">
                 <Icon name="upload" :size="15" />投稿
               </RouterLink>
 

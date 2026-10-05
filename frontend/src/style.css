@@ -655,3 +655,17 @@ body {
     font-size: 11px;
   }
 }
+
+/* 顶栏在窄屏要能放下：先收掉站名文字，再收紧间距 */
+@media (max-width: 480px) {
+  .pv-brand-name {
+    display: none;
+  }
+  header > .flex {
+    gap: 4px;
+  }
+  header {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
