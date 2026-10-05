@@ -158,16 +158,40 @@ app.mount("/media", StaticFiles(directory=str(settings.data_dir)), name="media")
 
 # 前端构建产物（存在时由后端直接托管）
 if settings.frontend_dist.exists():
-    app.mount("/assets", StaticFiles(directory=str(settings.frontend_dist / "assets")), name="assets")
+    dist = settings.frontend_dist
+    app.mount("/assets", StaticFiles(directory=str(dist / "assets")), name="assets")
 
-    @app.get("/{full_path:path}")
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def spa(full_path: str):
         if full_path.startswith("api/"):
             return JSONResponse(status_code=404, content={"code": "NOT_FOUND", "message": "接口不存在"})
-        candidate = settings.frontend_dist / full_path
+        candidate = dist / full_path
         if full_path and candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(settings.frontend_dist / "index.html")
+            # 带哈希的构建产物可以长期缓存；图标、manifest 这些每次校验
+            if full_path.startswith("assets/"):
+                return FileResponse(candidate, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+            return FileResponse(candidate, headers={"Cache-Control": "no-cache, must-revalidate"})
+        # 入口 HTML 绝不能缓存，否则发版后用户还在跑旧的前端
+        return FileResponse(dist / "index.html", headers={"Cache-Control": "no-cache, must-revalidate"})
+
+
+@app.middleware("http")
+async def static_cache_headers(request: Request, call_next):
+    """
+    补上静态资源的缓存头：
+    - /assets/ 文件名带内容哈希，直接一年 immutable
+    - 其它同源静态文件（sw.js、manifest、图标）每次回源校验，避免 Service Worker 卡在旧版本
+    没有这些头时浏览器会用启发式缓存，发版后用户可能长时间看到旧页面。
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif not path.startswith("/api/") and not path.startswith("/media/"):
+        content_type = response.headers.get("content-type", "")
+        if content_type.startswith("text/html") or path in ("/sw.js", "/manifest.webmanifest"):
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
 
 
 @app.on_event("startup")
