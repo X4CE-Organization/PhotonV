@@ -3,7 +3,7 @@
  * 页面导航走网络优先、断网回退缓存的首页；带哈希的 /assets/ 走缓存优先；
  * 接口与媒体文件（/api/、/media/）完全不缓存，避免看到过期的视频或数据。
  */
-const CACHE = 'photonv-shell-v1';
+const CACHE = 'photonv-shell-v2';
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-store' })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put('/', copy)).catch(() => {});
