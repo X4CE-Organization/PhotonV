@@ -1,0 +1,23 @@
+{
+  "name": "PhotonV · 开源微视频平台",
+  "short_name": "PhotonV",
+  "description": "开源的微视频平台：投稿、弹幕、直播、合集、动态",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#6d4aff",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "排行榜", "url": "/rank" },
+    { "name": "直播", "url": "/live" },
+    { "name": "私信", "url": "/messages" },
+    { "name": "投稿", "url": "/upload" }
+  ]
+}

@@ -131,7 +131,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto grid max-w-4xl gap-6 py-10 lg:grid-cols-2">
+  <div class="mx-auto grid grid-cols-1 max-w-4xl gap-6 py-10 lg:grid-cols-2">
     <section class="surface flex flex-col justify-center p-8">
       <h1 class="bg-gradient-to-r from-[#6d4aff] to-[#22d3ee] bg-clip-text text-3xl font-black text-transparent">
         {{ store.siteName }}
@@ -191,7 +191,7 @@ onMounted(async () => {
         <div class="flex items-center gap-2 text-xs muted">
           <span class="h-px flex-1 bg-[var(--pv-border)]"></span>第三方登录<span class="h-px flex-1 bg-[var(--pv-border)]"></span>
         </div>
-        <div class="grid gap-2 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             v-for="item in providers"
             :key="item.id"

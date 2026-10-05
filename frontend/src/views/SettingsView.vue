@@ -193,7 +193,7 @@ onMounted(() => {
       </template>
     </PageHead>
 
-    <div class="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
       <!-- 左侧资料卡 -->
       <aside class="pv-settings-side">
         <img v-if="form.avatar" :src="form.avatar" class="h-20 w-20 rounded-2xl object-cover" alt="" />
@@ -224,7 +224,7 @@ onMounted(() => {
           <label class="label">个性签名</label>
           <textarea v-model="form.bio" class="input min-h-[80px]" maxlength="500"></textarea>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label class="label">头像</label>
             <div class="flex items-center gap-3">
@@ -250,7 +250,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label class="label">邮箱</label>
             <input v-model="form.email" class="input" />
@@ -367,7 +367,7 @@ onMounted(() => {
         <p class="mt-2 text-xs muted">
           绑定后可以用手机号 + 验证码登录{{ phoneInfo?.smsEnabled ? '' : '（当前是开发模式，验证码会写进日志与站内信）' }}。
         </p>
-        <div class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
           <input v-model="phoneForm.phone" class="input" placeholder="11 位手机号" />
           <input v-model="phoneForm.code" class="input" placeholder="验证码" />
           <button class="btn-ghost text-xs" :disabled="phoneCooldown > 0" @click="sendPhoneCode">

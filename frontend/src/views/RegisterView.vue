@@ -142,7 +142,7 @@ onMounted(async () => {
       <p v-if="error" class="text-sm text-rose-500">{{ error }}</p>
       <button class="btn-primary w-full" :disabled="loading">{{ loading ? '注册中…' : '注册' }}</button>
 
-      <div v-if="providers.length" class="grid gap-2 pt-1 sm:grid-cols-2">
+      <div v-if="providers.length" class="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
         <button v-for="item in providers" :key="item.id" type="button" class="btn-ghost text-xs" @click="oauth(item.id)">
           <Icon name="key" :size="15" />{{ item.name }} 注册
         </button>

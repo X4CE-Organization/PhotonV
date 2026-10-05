@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
     </p>
 
     <template v-else>
-      <div class="grid gap-3 lg:grid-cols-[1.5fr_1fr]">
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-[1.5fr_1fr]">
         <!-- 预览 -->
         <div class="space-y-2">
           <div class="player-shell aspect-video bg-black">

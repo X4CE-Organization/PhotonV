@@ -133,11 +133,11 @@ onMounted(load);
       </div>
     </section>
 
-    <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
       <div class="space-y-4">
         <section class="surface p-4">
           <h2 class="text-sm font-semibold">会员套餐</h2>
-          <div class="mt-3 grid gap-3 sm:grid-cols-3">
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div
               v-for="plan in plans.items"
               :key="plan.id"

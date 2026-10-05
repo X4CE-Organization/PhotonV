@@ -75,7 +75,7 @@ onUnmounted(() => window.clearInterval(timer));
       <button class="btn-ghost text-xs" :disabled="busy" @click="load"><Icon name="refresh" :size="15" />刷新</button>
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <section class="surface p-4">
         <h2 class="flex items-center gap-2 text-sm font-semibold"><Icon name="server" :size="16" />Redis</h2>
         <dl class="mt-3 space-y-2 text-sm">

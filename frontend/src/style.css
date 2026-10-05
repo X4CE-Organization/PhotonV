@@ -592,3 +592,66 @@ body {
     position: static;
   }
 }
+
+/* ------------------------------------------------------------- 手机端 */
+
+@media (max-width: 720px) {
+  /* 刘海屏安全区 */
+  .pv-shell-header,
+  header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  footer,
+  .pv-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* iOS 聚焦时不会因为字号小于 16px 而把页面顶大 */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* 触摸目标别做太小 */
+  button,
+  .btn-ghost,
+  .btn-primary,
+  .chip {
+    min-height: 34px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 窄屏下 nowrap 的文本（比如设备 UA）一律截断，不去撑破网格 */
+  .truncate,
+  [class*="truncate"] {
+    min-width: 0;
+  }
+
+  /* 播放器、封面这类内容跟着屏宽走 */
+  video,
+  .pv-player video {
+    width: 100%;
+    height: auto;
+  }
+
+  /* 表格类内容横向滚动而不是撑破页面 */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 380px) {
+  .chip {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 11px;
+  }
+}

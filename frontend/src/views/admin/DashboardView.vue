@@ -104,7 +104,7 @@ onMounted(async () => {
   <p v-if="loading" class="py-20 text-center text-sm muted">加载中…</p>
   <div v-else-if="data" class="space-y-4">
     <!-- 待办：只有真的有事才出现 -->
-    <section v-if="pendingTodos.length" class="grid gap-2 sm:grid-cols-3">
+    <section v-if="pendingTodos.length" class="grid grid-cols-1 gap-2 sm:grid-cols-3">
       <RouterLink
         v-for="item in pendingTodos"
         :key="item.label"
@@ -123,7 +123,7 @@ onMounted(async () => {
     </section>
 
     <!-- 指标 -->
-    <section class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       <RouterLink v-for="card in kpis" :key="card.label" :to="card.to" class="pv-console-tile transition hover:-translate-y-0.5">
         <div class="flex items-center gap-2 text-xs muted">
           <Icon :name="card.icon" :size="14" />{{ card.label }}
@@ -137,7 +137,7 @@ onMounted(async () => {
       </RouterLink>
     </section>
 
-    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
       <!-- 趋势：横向条 -->
       <section class="pv-console-tile">
         <header class="flex items-center justify-between">
@@ -193,7 +193,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <div class="grid gap-4 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- 时间线 -->
       <section class="pv-console-tile">
         <h2 class="text-sm font-semibold">最近管理动作</h2>

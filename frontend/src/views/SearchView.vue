@@ -107,7 +107,7 @@ onMounted(() => {
 
     <template v-else>
       <p v-if="!users.length" class="surface p-16 text-center text-sm muted">没有找到相关用户</p>
-      <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <RouterLink
           v-for="user in users"
           :key="user.id"

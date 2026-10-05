@@ -42,7 +42,7 @@ onUnmounted(() => window.clearInterval(timer));
       <Icon name="info" :size="16" />{{ data.notice }}
     </p>
 
-    <div class="grid gap-4 lg:grid-cols-[2fr_1fr]">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
       <div class="relative overflow-hidden rounded-xl bg-slate-900">
         <template v-if="data.carousel?.length">
           <RouterLink :to="data.carousel[slide]?.link || '/'" class="block">
@@ -77,7 +77,7 @@ onUnmounted(() => window.clearInterval(timer));
       </div>
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
       <div>
         <div class="mb-3 flex items-center gap-3 text-sm">
           <button :class="tab === 'recommend' ? 'font-semibold text-[var(--pv-accent)]' : 'muted'" @click="tab = 'recommend'">推荐</button>

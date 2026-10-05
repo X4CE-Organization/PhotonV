@@ -248,7 +248,7 @@ onMounted(load);
 
 <template>
   <p v-if="loading" class="py-20 text-center text-sm muted">加载中…</p>
-  <div v-else-if="video" class="grid gap-4 lg:grid-cols-[1fr_330px]">
+  <div v-else-if="video" class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_330px]">
     <div class="space-y-4">
       <DanmakuPlayer
         ref="player"

@@ -79,7 +79,7 @@ onMounted(load);
     </div>
 
     <div v-if="!items.length" class="surface p-16 text-center text-sm muted">这个合集还没有视频</div>
-    <div v-else class="grid gap-4 lg:grid-cols-[1fr_330px]">
+    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_330px]">
       <div class="space-y-3">
         <div v-if="current" class="surface overflow-hidden">
           <div class="aspect-video w-full bg-black">

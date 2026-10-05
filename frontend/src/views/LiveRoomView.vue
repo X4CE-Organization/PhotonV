@@ -261,7 +261,7 @@ onUnmounted(() => {
       />
 
       <!-- OBS 面板 -->
-      <div v-else-if="studio" class="grid gap-3 lg:grid-cols-[1fr_320px]">
+      <div v-else-if="studio" class="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
         <div class="surface space-y-3 p-4">
           <h2 class="flex items-center gap-2 text-sm font-semibold"><Icon name="cpu" :size="16" />OBS / 推流软件设置</h2>
           <p class="text-xs muted">
@@ -327,7 +327,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 观众视角 -->
-    <div v-else class="grid gap-4 lg:grid-cols-[1fr_340px]">
+    <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
       <div class="space-y-4">
         <LivePlayer
           :active="isLive"

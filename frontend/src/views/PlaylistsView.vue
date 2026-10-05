@@ -90,7 +90,7 @@ onMounted(load);
     <p v-else-if="!items.length" class="surface p-16 text-center text-sm muted">
       还没有合集，点右上角新建一个，把想连起来看的视频放进去。
     </p>
-    <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div v-for="item in items" :key="item.id" class="surface overflow-hidden">
         <RouterLink :to="`/playlist/${item.id}`" class="block">
           <img v-if="item.cover" :src="item.cover" class="h-32 w-full object-cover" alt="" />

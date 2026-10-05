@@ -161,7 +161,7 @@ onMounted(loadMine);
 </script>
 
 <template>
-  <div class="grid gap-5 lg:grid-cols-[1fr_360px]">
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
     <div class="space-y-4">
       <PageHead icon="upload" title="投稿" :subtitle="String(store.settings.video_review_note || '')" />
       <div class="surface p-4">
@@ -198,7 +198,7 @@ onMounted(loadMine);
             <input v-model="form.title" class="input" maxlength="80" placeholder="起个吸引人的标题吧" />
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-2">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="label">分区</label>
               <select v-model="form.category_id" class="input">

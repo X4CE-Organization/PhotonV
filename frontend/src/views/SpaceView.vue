@@ -341,7 +341,7 @@ onMounted(load);
 
     <template v-else-if="tab === 'playlists'">
       <p v-if="!playlists.length" class="surface p-16 text-center text-sm muted">还没有公开的合集</p>
-      <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <RouterLink
           v-for="item in playlists"
           :key="item.id"
@@ -359,7 +359,7 @@ onMounted(load);
       </div>
     </template>
 
-    <div v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <RouterLink
         v-for="user in follows"
         :key="user.id"

@@ -138,7 +138,7 @@ onUnmounted(() => socket?.close());
 </script>
 
 <template>
-  <div class="grid gap-4 lg:grid-cols-[300px_1fr]">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
     <aside class="surface overflow-hidden">
       <div class="flex items-center gap-2 border-b border-[var(--pv-border)] px-4 py-3 text-sm font-semibold">
         <Icon name="message" :size="17" />私信

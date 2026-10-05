@@ -57,7 +57,7 @@ onMounted(load);
       <button class="btn-primary text-xs" @click="openCreate">新增轮播</button>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <div v-for="item in items" :key="item.id" class="surface overflow-hidden">
         <img :src="item.image" class="aspect-[16/7] w-full object-cover" alt="" />
         <div class="p-3">
