@@ -654,3 +654,32 @@ class VideoVariant(Base):
     width: Mapped[int] = mapped_column(Integer, default=0)
     height: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Moment(Base):
+    """动态：只能在个人主页里发布和浏览，不单独开全站频道。"""
+
+    __tablename__ = "moments"
+    __table_args__ = (Index("idx_moments_user", "user_id", "id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
+    content: Mapped[str] = mapped_column(Text, default="")
+    # JSON 数组，最多 9 张图
+    images: Mapped[str] = mapped_column(Text, default="[]")
+    # 仅自己可见：个人主页里的私密碎碎念
+    is_private: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    like_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class MomentLike(Base):
+    __tablename__ = "moment_likes"
+
+    moment_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("moments.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
